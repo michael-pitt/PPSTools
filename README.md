@@ -9,7 +9,7 @@ cmsenv
 
 #This package
 cd $CMSSW_BASE/src
-git clone https://github.com/michael-pitt/PPSTools.git
+git clone git@github.com:michael-pitt/PPSTools.git
 scram b -j 8
 ```
 
