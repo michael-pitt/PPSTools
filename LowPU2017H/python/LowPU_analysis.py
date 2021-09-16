@@ -30,7 +30,11 @@ class Analysis(Module):
         self.out.branch("nano_LepPT"     , "F");
         self.out.branch("nano_LepEta"     , "F");
         self.out.branch("nano_mll"     , "F");
+        self.out.branch("nano_Yll"     , "F");
         self.out.branch("nano_mjets"     , "F");
+        self.out.branch("nano_Yjets"     , "F");
+        self.out.branch("nano_JetPT"     , "F");
+        self.out.branch("nano_JetEta"     , "F");
         self.out.branch("nano_xip"     , "F");
         self.out.branch("nano_xin"     , "F");
 
@@ -80,7 +84,7 @@ class Analysis(Module):
         event.selectedAK4Jets.sort(key=lambda x: x.pt, reverse=True)
 
     def selectProtons(self, event):
-        ## access a collection in nanoaod and create a new collection based on this
+        ## access a collection of protons and create a new collection based on this
         
         event.selectedProtons = []
         protons = Collection(event, "Proton_multiRP")
@@ -112,7 +116,7 @@ class Analysis(Module):
             # leading muon pt cut
             if event.selectedMuons[0].pt<15: return False
             
-            #DY selection
+            #DY selection (2 OS muons)
             if len(event.selectedMuons)==2:
                 if event.selectedMuons[0].charge==event.selectedMuons[1].charge: return False
         
@@ -129,28 +133,41 @@ class Analysis(Module):
             # leading electron pt cut
             if event.selectedElectrons[0].pt<15: return False
 
-            #DY selection
+            #DY selection (2 OS electrons)
             if len(event.selectedElectrons)==2:
                 if event.selectedElectrons[0].charge==event.selectedElectrons[1].charge: return False
 
         if self.channel=="mj":
-
+            
+            #select events with at least 2 jets
             if len(event.selectedAK4Jets)<2: return False
+            
+            #leading jet pT >140 (trigger treshold)
             if event.selectedAK4Jets[0].pt<140: return False
         
-        # compute high level variables
+        ######################################################
+        ##### HIGH LEVEL VARIABLES FOR SELECTED EVENTS   #####
+        ######################################################
+
+        # leading lepton and jet pt/eta
         leading_lep_pt=-1; leading_lep_eta=-999
         if len(event.selectedElectrons):
             leading_lep_pt=event.selectedElectrons[0].pt
             leading_lep_eta=event.selectedElectrons[0].eta
         if len(event.selectedMuons) and event.selectedMuons[0].pt>leading_lep_pt: 
-                leading_lep_pt=event.selectedMuons[0].pt
-                leading_lep_eta=event.selectedMuons[0].eta
+            leading_lep_pt=event.selectedMuons[0].pt
+            leading_lep_eta=event.selectedMuons[0].eta
+
+
+        leading_jet_pt=-1; leading_jet_eta=-999
+        if len(event.selectedAK4Jets):
+            leading_jet_pt=event.selectedAK4Jets[0].pt
+            leading_jet_eta=event.selectedAK4Jets[0].eta
                 
-        #W boson mass
+        #W boson 4-vector
         # missing implementation
         
-        #di-lepton mass
+        #di-lepton 4-vector
         lepSum = ROOT.TLorentzVector()
         if len(event.selectedElectrons)==2:
             for lep in event.selectedElectrons:
@@ -159,7 +176,7 @@ class Analysis(Module):
             for lep in event.selectedMuons:
                 lepSum+=lep.p4()
                 
-        #multi-jet mass:
+        #multi-jet 4-vector:
         jetSum = ROOT.TLorentzVector()
         for jet in event.selectedAK4Jets:
             jetSum+=jet.p4()
@@ -176,8 +193,12 @@ class Analysis(Module):
         self.out.fillBranch("nano_nLeptons" , len(event.selectedElectrons)+len(event.selectedMuons))
         self.out.fillBranch("nano_LepPT" , leading_lep_pt)
         self.out.fillBranch("nano_LepEta" , leading_lep_eta)
+        self.out.fillBranch("nano_JetPT" , leading_jet_pt)
+        self.out.fillBranch("nano_JetEta" , leading_jet_eta)
         self.out.fillBranch("nano_mll" , lepSum.M())
+        self.out.fillBranch("nano_Yll" , lepSum.Rapidity())
         self.out.fillBranch("nano_mjets" , jetSum.M())
+        self.out.fillBranch("nano_Yjets" , jetSum.Rapidity())
         self.out.fillBranch("nano_xip" , xip)
         self.out.fillBranch("nano_xin" , xin)
     
