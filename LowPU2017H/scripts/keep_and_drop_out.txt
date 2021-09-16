@@ -5,10 +5,7 @@ drop *
 keep run*
 keep event*
 
-#keep objects
-keep Jet*
-keep Proton_multiRP*
-
 #keep custom variables
 keep nIsoTrack*
+keep nano*
 
