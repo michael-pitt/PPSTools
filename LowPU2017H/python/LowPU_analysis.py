@@ -77,7 +77,7 @@ class Analysis(Module):
         event.selectedAK4Jets = []
         ak4jets = Collection(event, "Jet")
         for j in ak4jets:
-            if not (j.pt > 25 and abs(j.eta) < 2.4 and (j.jetId & 2)):
+            if not (j.pt > 25 and abs(j.eta) < 4.7 and (j.jetId & 2)):
                 continue
             event.selectedAK4Jets.append(j)
             
