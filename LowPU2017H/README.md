@@ -22,8 +22,8 @@ scram b -j
 Analysis code is in [LowPU_analysis.py](https://github.com/michael-pitt/PPSTools/blob/main/LowPU2017H/python/LowPU_analysis.py), which select events, compute high level variables and write a skimmed output tree
 
 Three analysis modules can be executed:
-- `analysis_mu`: HLT_HIMu15, selecting events with 1 or 2 muons. lep0_pt>15GeV, Electron veto. If 2 muons are selected, only OS events are stored.
-- `analysis_el`: HLT_HIEle15_WPLoose_Gsf, selecting events with 1 or 2 electrons. lep0_pt>15GeV, Muon veto. If 2 electrons are selected, only OS events are stored.
+- `analysis_mu`: HLT_HIMu15, 1 or 2 muons, mu0_pt>15GeV, Electron veto. If 2 muons are selected, only OS events are stored.
+- `analysis_el`: HLT_HIEle15_WPLoose_Gsf, 1 or 2 electrons, el0_pt>15GeV, Muon veto. If 2 electrons are selected, only OS events are stored.
 - `analysis_mj`: HLT_HIPFJet140 || HLT_HIPFJetFwd140, selecting events with at least 2 jets, where the leading jet has pt > 140 GeV.
 
 For each event selection:
