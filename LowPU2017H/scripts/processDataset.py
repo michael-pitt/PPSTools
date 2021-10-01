@@ -31,9 +31,9 @@ def main():
     scripts_dir='{}/src/PPSTools/LowPU2017H/scripts'.format(cmssw)
     with open (condor_script,'w') as condor:
         condor.write('executable = {}/lowpu_worker.sh\n'.format(scripts_dir))
-        condor.write('output     = {}.out\n'.format(condor_script))
-        condor.write('error      = {}.err\n'.format(condor_script))
-        condor.write('log        = {}.log\n'.format(condor_script))
+        condor.write('output     = condor/jobs$(ClusterId).out\n')
+        condor.write('error      = condor/jobs$(ClusterId).err\n')
+        condor.write('log        = condor/jobs$(ClusterId).log\n')
         condor.write('+JobFlavour = "testmatch"\n')
         condor.write('arguments = $(input) {} {}\n'.format(opt.output,cmssw))
         condor.write('queue input from (\n')
