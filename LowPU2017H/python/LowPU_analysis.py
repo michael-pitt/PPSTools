@@ -88,7 +88,7 @@ class Analysis(Module):
                 
             #check overlap with selected leptons
             deltaR_to_leptons=[ j.p4().DeltaR(lep.p4()) for lep in event.selectedMuons+event.selectedElectrons ]
-            hasLepOverlap=sum( [dR>0.4 for dR in deltaR_to_leptons] )
+            hasLepOverlap=sum( [dR<0.4 for dR in deltaR_to_leptons] )
             if hasLepOverlap>0: 
                 continue
 
