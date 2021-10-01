@@ -9,8 +9,6 @@ from PhysicsTools.NanoAODTools.postprocessing.modules.jme.jetmetUncertainties im
 ##new way of using jme uncertainty
 from PhysicsTools.NanoAODTools.postprocessing.modules.jme.jetmetHelperRun2 import *
 
-
-
 class Analysis(Module):
     def __init__(self, channel):
         self.channel = channel
@@ -56,8 +54,8 @@ class Analysis(Module):
         electrons = Collection(event, "Electron")
         for el in electrons:
             el.etaSC = el.eta + el.deltaEtaSC
-            if el.pt > 10 and abs(el.eta) < 2.4 and abs(el.dxy) < 0.05 and abs(el.dz) < 0.2 and el.pfRelIso03_all < 0.4:
-                if el.mvaFall17V2noIso_WP90:
+            if el.pt > 20 and abs(el.eta) < 2.4 and abs(el.dxy) < 0.05 and abs(el.dz) < 0.2 and el.pfRelIso03_all < 0.4:
+                if el.mvaFall17V2Iso_WP90:
                     event.selectedElectrons.append(el)
 
         event.selectedElectrons.sort(key=lambda x: x.pt, reverse=True)
@@ -69,8 +67,8 @@ class Analysis(Module):
         event.selectedMuons = []
         muons = Collection(event, "Muon")
         for mu in muons:
-            if mu.pt > 10 and abs(mu.eta) < 2.4 and abs(mu.dxy) < 0.5 and abs(mu.dz) < 1.0 and mu.pfRelIso04_all < 0.4:
-                if mu.looseId:
+            if mu.pt > 20 and abs(mu.eta) < 2.4 and abs(mu.dxy) < 0.5 and abs(mu.dz) < 1.0 and mu.pfRelIso04_all < 0.4:
+                if mu.tightId:
                     event.selectedMuons.append(mu)
 
         event.selectedMuons.sort(key=lambda x: x.pt, reverse=True)
@@ -83,7 +81,15 @@ class Analysis(Module):
         event.selectedAK4Jets = []
         ak4jets = Collection(event, "Jet")
         for j in ak4jets:
-            if not (j.pt > 25 and abs(j.eta) < 4.7 and (j.jetId & 2)):
+
+            if j.pt<25 : 
+                continue
+
+            if abs(j.eta) < 4.7:
+                continue
+            
+            #require tight (2^1) or tightLepVeto (2^2)
+            if j.jetId<2 : 
                 continue
                 
             #check overlap with selected leptons
@@ -126,13 +132,9 @@ class Analysis(Module):
             if len(event.selectedMuons)==0: return False
             if len(event.selectedMuons)>2: return False
             
-            # leading muon pt cut
-            if event.selectedMuons[0].pt<15: return False
-            
             #DY selection (2 OS muons)
             if len(event.selectedMuons)==2:
                 if event.selectedMuons[0].charge==event.selectedMuons[1].charge: return False
-        
 
         if self.channel=="el":
 
@@ -142,9 +144,6 @@ class Analysis(Module):
             # veto events with 0 or >2 electrons
             if len(event.selectedElectrons)==0: return False
             if len(event.selectedElectrons)>2: return False
-            
-            # leading electron pt cut
-            if event.selectedElectrons[0].pt<15: return False
 
             #DY selection (2 OS electrons)
             if len(event.selectedElectrons)==2:
