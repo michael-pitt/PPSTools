@@ -34,8 +34,8 @@ options.register('outFilename', 'output_nano.root',
                  )
 options.parseArguments()
 
-print "INFO: Era set to ", options.era
-print "INFO: isData set to ", options.isData
+print "INFO: Era set to", options.era
+print "INFO: isData set to", options.isData
 
 
 if '2016preVFP' in options.era:
@@ -46,6 +46,12 @@ elif '2017' in options.era:
     process = cms.Process('NANO',eras.Run2_2017,eras.run2_nanoAOD_106Xv2)
 elif '2018' in options.era:
     process = cms.Process('NANO',eras.Run2_2018,eras.run2_nanoAOD_106Xv2)
+
+#get the configuration to apply
+from PPSTools.NanoTools.EraConfig import getEraConfiguration
+globalTag, ppscff = getEraConfiguration(era=options.era,isData=options.isData)
+print("INFO: globalTag set to "+globalTag)
+
 
 # import of standard configurations
 process.load('Configuration.StandardSequences.Services_cff')
@@ -58,14 +64,24 @@ process.load('Configuration.StandardSequences.MagneticField_cff')
 process.load('PhysicsTools.NanoAOD.nano_cff')
 process.load('Configuration.StandardSequences.EndOfProcess_cff')
 process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')
+if options.runProtonFastSim:
+  process.load(ppscff)
 
 # process stdout
-process.MessageLogger.cerr.threshold = cms.untracked.string('ERROR')
-process.MessageLogger.cerr.FwkReport.reportEvery = cms.untracked.int32(1000)
+process.MessageLogger.cerr.threshold = cms.untracked.string('')
+process.MessageLogger.cerr.FwkReport.reportEvery = cms.untracked.int32(100)
 
 #process options
-process.maxEvents = cms.untracked.PSet( input = cms.untracked.int32(options.maxEvents) )
-process.source = cms.Source("PoolSource",fileNames = cms.untracked.vstring(options.inputFiles))
+
+process.maxEvents = cms.untracked.PSet(
+    input = cms.untracked.int32(options.maxEvents)
+)
+
+# Input source
+process.source = cms.Source("PoolSource",
+                            fileNames = cms.untracked.vstring(options.inputFiles),
+                            duplicateCheckMode = cms.untracked.string('noDuplicateCheck') 
+                            )
 
 process.options = cms.untracked.PSet(
     wantSummary = cms.untracked.bool(False) 
@@ -93,12 +109,6 @@ process.NANOEDMAODSIMoutput = cms.OutputModule("NanoAODOutputModule",
 # Additional output definition
 
 # Other statements
-
-#get the configuration to apply
-from PPSTools.NanoTools.EraConfig import getEraConfiguration
-globalTag, ppscff = getEraConfiguration(era=options.era,isData=options.isData)
-print("INFO: globalTag set to "+globalTag)
-
 # global tag
 from Configuration.AlCa.GlobalTag import GlobalTag
 process.GlobalTag = GlobalTag(process.GlobalTag, globalTag, '')
@@ -109,12 +119,26 @@ process.endjob_step = cms.EndPath(process.endOfProcess)
 process.NANOEDMAODSIMoutput_step = cms.EndPath(process.NANOEDMAODSIMoutput)
 nanoSteps = [process.nanoAOD_step, process.endjob_step, process.NANOEDMAODSIMoutput_step]
 
+# Output definition
+process.MINIAODSIMoutput = cms.OutputModule("PoolOutputModule",
+    compressionAlgorithm = cms.untracked.string('LZMA'),
+    compressionLevel = cms.untracked.int32(4),
+    dataset = cms.untracked.PSet(
+        dataTier = cms.untracked.string(''),
+        filterName = cms.untracked.string('')
+    ),
+    fileName = cms.untracked.string(options.outputFile),
+    outputCommands = process.MINIAODSIMEventContent.outputCommands
+)
+process.endjob_step = cms.EndPath(process.endOfProcess)
+process.MINIAODSIMoutput_step = cms.EndPath(process.MINIAODSIMoutput)
+nanoSteps = [process.endjob_step, process.MINIAODSIMoutput_step]
+
 #schedule execution
 toSchedule=[]
 
 #proton reconstruction
 if options.runProtonFastSim:
-  process.load(ppscff)
   print 'INFO:\t Run proton simulation with xangle = ',options.runProtonFastSim,'murad'
   from PPSTools.NanoTools.protonReco_cfg import setupProtonSim
   setupProtonSim(process,options.runProtonFastSim,withPU=options.doPUProtons)
@@ -122,6 +146,7 @@ if options.runProtonFastSim:
 
 # Schedule definition
 process.schedule=cms.Schedule( (p for p in toSchedule + nanoSteps) )
+print process.schedule
 from PhysicsTools.PatAlgos.tools.helpers import associatePatAlgosToolsTask
 associatePatAlgosToolsTask(process)
 

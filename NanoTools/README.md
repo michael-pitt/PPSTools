@@ -1,6 +1,6 @@
 # NanoTools
 
-Contains scripts to post-process nanoAOD files with PPS content.
+Contains scripts to produce nanoAOD files with PPS content.
 
 ## CMSSW setup
 ```
@@ -15,19 +15,25 @@ scram b -j
 
 ## Processing files
 
-MINIAOD -> PROTONRECO -> NANOAOD
+### Testing proton reconstruction
 
-### Running on a single file:
+To test proton reconstruction before producing NANOAODs, one can run the following sequence: MINIAOD -> PROTONRECO -> MINIAOD. The example will run the simulation using the 2017 post-TS2 PPS configuration, with a crossing-angle of 150urad.
 
-example of running on a file from `SingleMuon` stream
 ```
-$CMSSW_BASE/src/PhysicsTools/NanoAODTools/scripts/nano_postproc.py \
-output root://cms-xrd-global.cern.ch//store/data/Run2017H/SingleMuon/NANOAOD/UL2017_MiniAODv2_NanoAODv9-v1/100000/00E28CF6-5CDE-A644-A390-40F2F6613888.root \
---json $CMSSW_BASE/src/PPSTools/LowPU2017H/data/combined_RPIN_CMS_LOWMU.json \
---bi $CMSSW_BASE/src/PPSTools/LowPU2017H/scripts/keep_and_drop_in.txt \
---bo $CMSSW_BASE/src/PPSTools/LowPU2017H/scripts/keep_and_drop_out.txt \
--c "HLT_HIMu15" -I PPSTools.LowPU2017H.LowPU_analysis analysis_mu
+file=/store/mc/RunIISummer20UL17MiniAODv2/WJetsToLNu_TuneCP5_13TeV-madgraphMLM-pythia8/MINIAODSIM/106X_mc2017_realistic_v9-v1/240000/C070EFE9-646E-2D4C-BFEA-4011B96BBCC9.root
+cmsRun $CMSSW_BASE/src/PPSTools/NanoTools/test/addProtons_miniaod.py maxEvents=500 inputFiles=$file
 ```
+
+The output file - `output_numEvent500.root` is a MINIAOD which contain 500 events with reconstructed protons from `genPUProtons` container.
+
+### Producing nanoAODs
+
+The following sequence - MINIAOD -> PROTONRECO -> NANOAOD - can be executed using the following command:
+```
+cmsRun $CMSSW_BASE/src/PPSTools/NanoTools/test/produceNANO.py inputFiles=$file maxEvents=500 runProtonFastSim=150
+```
+
+Where the `runProtonFastSim` is the input parameter indicates the simulated crossing angle.
 
 ### Submitting to condor
 

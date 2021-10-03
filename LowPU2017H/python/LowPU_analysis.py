@@ -75,8 +75,7 @@ class Analysis(Module):
 
 
     def selectAK4Jets(self, event):
-        ## access a collection in nanoaod and create a new collection based on this
-        ## apply bitwise selection on some ID e.g., here is the jetID [similar for EG ids bla..]
+        ## Selected jets: pT>25, |eta|<4.7, pass tight ID
         
         event.selectedAK4Jets = []
         ak4jets = Collection(event, "Jet")
@@ -88,7 +87,7 @@ class Analysis(Module):
             if abs(j.eta) < 4.7:
                 continue
             
-            #require tight (2^1) or tightLepVeto (2^2)
+            #require tight (2^1) or tightLepVeto (2^2) [https://twiki.cern.ch/twiki/bin/view/CMS/JetID#nanoAOD_Flags]
             if j.jetId<2 : 
                 continue
                 
