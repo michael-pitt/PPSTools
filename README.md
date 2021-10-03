@@ -23,3 +23,8 @@ The package is used to extract proton efficiency corrections from the data, it r
 ### 2. Low PU analysis
 This package contain modules and codes used with 2017H datasample.
 
+### 3. NanoTools
+This package contains modules to be used during the MINIAOD->NANOAOD step (in development):
+   * Proton simulation and reconstruction
+   * Adding high-level variables computed from tracks
+
