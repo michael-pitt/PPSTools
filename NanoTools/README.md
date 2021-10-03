@@ -13,6 +13,12 @@ git clone git@github.com:michael-pitt/PPSTools.git
 scram b -j
 ```
 
+As a default, the proton nanoAOD content is not stored for MC. To enable it add `protonTablesTask` to the `nanoTableTaskCommon` in [PhysicsTools.NanoAOD.nano_cff](https://github.com/cms-sw/cmssw/blob/master/PhysicsTools/NanoAOD/python/nano_cff.py), after downloading the NanoAOD package: 
+```
+cd CMSSW_10_6_27/src
+git cms-addpkg PhysicsTools/NanoAOD
+```
+
 ## Processing files
 
 ### Testing proton reconstruction
