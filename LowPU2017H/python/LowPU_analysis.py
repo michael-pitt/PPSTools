@@ -9,8 +9,6 @@ from PhysicsTools.NanoAODTools.postprocessing.modules.jme.jetmetUncertainties im
 ##new way of using jme uncertainty
 from PhysicsTools.NanoAODTools.postprocessing.modules.jme.jetmetHelperRun2 import *
 
-
-
 class Analysis(Module):
     def __init__(self, channel):
         self.channel = channel
@@ -23,18 +21,24 @@ class Analysis(Module):
         pass
 
     def beginFile(self, inputFile, outputFile, inputTree, wrappedOutputTree):
+
         self.out = wrappedOutputTree
         self.out.branch("nano_nJets"     , "I");
         self.out.branch("nano_nProtons"     , "I");
         self.out.branch("nano_nLeptons"     , "I");
         self.out.branch("nano_LepPT"     , "F");
         self.out.branch("nano_LepEta"     , "F");
+        self.out.branch("nano_LepPhi"     , "F");
         self.out.branch("nano_mll"     , "F");
         self.out.branch("nano_Yll"     , "F");
         self.out.branch("nano_mjets"     , "F");
         self.out.branch("nano_Yjets"     , "F");
         self.out.branch("nano_JetPT"     , "F");
         self.out.branch("nano_JetEta"     , "F");
+        self.out.branch("nano_JetPhi"     , "F");
+        self.out.branch("nano_WMT"     , "F");
+        self.out.branch("nano_WPT"     , "F");
+        self.out.branch("nano_WPhi"    , "F");
         self.out.branch("nano_xip"     , "F");
         self.out.branch("nano_xin"     , "F");
 
@@ -50,8 +54,8 @@ class Analysis(Module):
         electrons = Collection(event, "Electron")
         for el in electrons:
             el.etaSC = el.eta + el.deltaEtaSC
-            if el.pt > 10 and abs(el.eta) < 2.4 and abs(el.dxy) < 0.05 and abs(el.dz) < 0.2 and el.pfRelIso03_all < 0.4:
-                if el.mvaFall17V2noIso_WP90:
+            if el.pt > 20 and abs(el.eta) < 2.4 and abs(el.dxy) < 0.05 and abs(el.dz) < 0.2 and el.pfRelIso03_all < 0.4:
+                if el.mvaFall17V2Iso_WP90:
                     event.selectedElectrons.append(el)
 
         event.selectedElectrons.sort(key=lambda x: x.pt, reverse=True)
@@ -63,8 +67,8 @@ class Analysis(Module):
         event.selectedMuons = []
         muons = Collection(event, "Muon")
         for mu in muons:
-            if mu.pt > 10 and abs(mu.eta) < 2.4 and abs(mu.dxy) < 0.5 and abs(mu.dz) < 1.0 and mu.pfRelIso04_all < 0.4:
-                if mu.looseId:
+            if mu.pt > 20 and abs(mu.eta) < 2.4 and abs(mu.dxy) < 0.5 and abs(mu.dz) < 1.0 and mu.pfRelIso04_all < 0.4:
+                if mu.tightId:
                     event.selectedMuons.append(mu)
 
         event.selectedMuons.sort(key=lambda x: x.pt, reverse=True)
@@ -77,8 +81,23 @@ class Analysis(Module):
         event.selectedAK4Jets = []
         ak4jets = Collection(event, "Jet")
         for j in ak4jets:
-            if not (j.pt > 25 and abs(j.eta) < 4.7 and (j.jetId & 2)):
+
+            if j.pt<25 : 
                 continue
+
+            if abs(j.eta) < 4.7:
+                continue
+            
+            #require tight (2^1) or tightLepVeto (2^2)
+            if j.jetId<2 : 
+                continue
+                
+            #check overlap with selected leptons
+            deltaR_to_leptons=[ j.p4().DeltaR(lep.p4()) for lep in event.selectedMuons+event.selectedElectrons ]
+            hasLepOverlap=sum( [dR<0.4 for dR in deltaR_to_leptons] )
+            if hasLepOverlap>0: 
+                continue
+
             event.selectedAK4Jets.append(j)
             
         event.selectedAK4Jets.sort(key=lambda x: x.pt, reverse=True)
@@ -113,13 +132,9 @@ class Analysis(Module):
             if len(event.selectedMuons)==0: return False
             if len(event.selectedMuons)>2: return False
             
-            # leading muon pt cut
-            if event.selectedMuons[0].pt<15: return False
-            
             #DY selection (2 OS muons)
             if len(event.selectedMuons)==2:
                 if event.selectedMuons[0].charge==event.selectedMuons[1].charge: return False
-        
 
         if self.channel=="el":
 
@@ -129,9 +144,6 @@ class Analysis(Module):
             # veto events with 0 or >2 electrons
             if len(event.selectedElectrons)==0: return False
             if len(event.selectedElectrons)>2: return False
-            
-            # leading electron pt cut
-            if event.selectedElectrons[0].pt<15: return False
 
             #DY selection (2 OS electrons)
             if len(event.selectedElectrons)==2:
@@ -150,22 +162,34 @@ class Analysis(Module):
         ######################################################
 
         # leading lepton and jet pt/eta
-        leading_lep_pt=-1; leading_lep_eta=-999
+        leading_lep_pt=-1; leading_lep_eta=-999; leading_lep_phi=-999
         if len(event.selectedElectrons):
             leading_lep_pt=event.selectedElectrons[0].pt
             leading_lep_eta=event.selectedElectrons[0].eta
+            leading_lep_phi=event.selectedElectrons[0].phi
         if len(event.selectedMuons) and event.selectedMuons[0].pt>leading_lep_pt: 
             leading_lep_pt=event.selectedMuons[0].pt
             leading_lep_eta=event.selectedMuons[0].eta
+            leading_lep_phi=event.selectedMuons[0].phi
 
-
-        leading_jet_pt=-1; leading_jet_eta=-999
+        leading_jet_pt=-1; leading_jet_eta=-999; leading_jet_phi=-999
         if len(event.selectedAK4Jets):
             leading_jet_pt=event.selectedAK4Jets[0].pt
             leading_jet_eta=event.selectedAK4Jets[0].eta
+            leading_jet_phi=event.selectedAK4Jets[0].phi
                 
-        #W boson 4-vector
-        # missing implementation
+        #W boson transverse mass,pt and phi
+        MET_pt=event.MET_pt
+        MET_phi=event.MET_phi
+        w_mT =  2.*leading_lep_pt*MET_pt*(1.-ROOT.TMath.Cos(ROOT.TVector2.Phi_mpi_pi(leading_lep_phi-MET_phi)))
+        if w_mT>0: 
+            w_mT=ROOT.TMath.Sqrt(w_mT)
+        else:
+            w_mT=-999.
+        w_ptvec=ROOT.TVector2(leading_lep_pt*ROOT.TMath.Cos(leading_lep_phi)+MET_pt*ROOT.TMath.Cos(MET_phi),
+                              leading_lep_pt*ROOT.TMath.Sin(leading_lep_phi)+MET_pt*ROOT.TMath.Sin(MET_phi))
+        w_pt=w_ptvec.Mod()
+        w_phi=w_ptvec.Phi()
         
         #di-lepton 4-vector
         lepSum = ROOT.TLorentzVector()
@@ -188,19 +212,24 @@ class Analysis(Module):
             if pr.arm==1: xin=pr.xi
                 
         ## store branches
-        self.out.fillBranch("nano_nJets" , len(event.selectedAK4Jets))
+        self.out.fillBranch("nano_nJets" ,    len(event.selectedAK4Jets))
         self.out.fillBranch("nano_nProtons" , len(event.selectedProtons))
         self.out.fillBranch("nano_nLeptons" , len(event.selectedElectrons)+len(event.selectedMuons))
-        self.out.fillBranch("nano_LepPT" , leading_lep_pt)
-        self.out.fillBranch("nano_LepEta" , leading_lep_eta)
-        self.out.fillBranch("nano_JetPT" , leading_jet_pt)
-        self.out.fillBranch("nano_JetEta" , leading_jet_eta)
-        self.out.fillBranch("nano_mll" , lepSum.M())
-        self.out.fillBranch("nano_Yll" , lepSum.Rapidity())
-        self.out.fillBranch("nano_mjets" , jetSum.M())
-        self.out.fillBranch("nano_Yjets" , jetSum.Rapidity())
-        self.out.fillBranch("nano_xip" , xip)
-        self.out.fillBranch("nano_xin" , xin)
+        self.out.fillBranch("nano_LepPT" ,    leading_lep_pt)
+        self.out.fillBranch("nano_LepEta" ,   leading_lep_eta)
+        self.out.fillBranch("nano_LepPhi" ,   leading_lep_phi)
+        self.out.fillBranch("nano_JetPT" ,    leading_jet_pt)
+        self.out.fillBranch("nano_JetEta" ,   leading_jet_eta)
+        self.out.fillBranch("nano_JetPhi" ,   leading_jet_phi)
+        self.out.fillBranch("nano_WMT" ,     w_mT)
+        self.out.fillBranch("nano_WPT" ,     w_pt)
+        self.out.fillBranch("nano_WPhi" ,    w_phi)
+        self.out.fillBranch("nano_mll" ,      lepSum.M())
+        self.out.fillBranch("nano_Yll" ,      lepSum.Rapidity())
+        self.out.fillBranch("nano_mjets",     jetSum.M())
+        self.out.fillBranch("nano_Yjets",     jetSum.Rapidity())
+        self.out.fillBranch("nano_xip",       xip)
+        self.out.fillBranch("nano_xin",       xin)
     
         return True
 
