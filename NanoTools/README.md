@@ -18,9 +18,31 @@ As a default, the proton nanoAOD content is not stored for MC. To enable it add 
 cd CMSSW_10_6_27/src
 git cms-addpkg PhysicsTools/NanoAOD
 ```
-To retrieve PU protons from `GenParticle` container, modify [genparticles_cff.py](https://github.com/cms-sw/cmssw/blob/master/PhysicsTools/NanoAOD/python/genparticles_cff.py) as follows:
+To retrieve PU protons from `GenParticle` container, add to [genparticles_cff.py](https://github.com/cms-sw/cmssw/blob/master/PhysicsTools/NanoAOD/python/genparticles_cff.py) the following code:
 ```python
-#"drop abs(pdgId)= 2212 && abs(pz) > 1000", #drop LHC protons accidentally added by previous keeps
+finalGenProtons = cms.EDProducer("GenParticlePruner",
+    src = cms.InputTag("genPUProtons","genPUProtons"),
+    select = cms.vstring(
+	"drop *",
+    "keep ((pdgId == 2212) && (abs(pz) > 5200) && (abs(pz) < 6467.5))", #keep LHC protons with xi in (1.5% - 20%)
+   )
+)
+
+genProtonTable = cms.EDProducer("SimpleCandidateFlatTableProducer",
+    src = cms.InputTag("finalGenProtons"),
+    cut = cms.string(""), #we should not filter after pruning
+    name= cms.string("GenProton"),
+    doc = cms.string("diffractive protons"),
+    singleton = cms.bool(False), # the number of entries is variable
+    extension = cms.bool(False), # this is the main table for the taus
+    variables = cms.PSet(
+         pt  = Var("pt",  float, precision=8),
+         pz = Var("pz", float,precision=8),
+    )
+)
+
+genProtonSequence = cms.Sequence(finalGenProtons)
+genProtonTables = cms.Sequence(genProtonTable)
 ```
 
 ## Processing files
