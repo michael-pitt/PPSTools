@@ -4,14 +4,24 @@ An example file to run proton simulation + reconstruction on MC events.
 All protons from "genPUProtons" will be processed
 '''
 from FWCore.ParameterSet.VarParsing import VarParsing
-options = VarParsing ('python')		            
+options = VarParsing ('python')
+options.register('instance', 'genPUProtons',
+                 VarParsing.multiplicity.singleton,
+                 VarParsing.varType.string,
+                 "productInstanceName for PU protons"
+                 )	 
+options.register('xangle', 150,
+                 VarParsing.multiplicity.singleton,
+                 VarParsing.varType.int,
+                 "set crossing angle"
+                 )	                  
 options.parseArguments()
 
 #start process
 from Configuration.StandardSequences.Eras import eras
 from Configuration.ProcessModifiers.run2_miniAOD_UL_cff import run2_miniAOD_UL
 
-process = cms.Process("MiniAnalysis", eras.Run2_2017, run2_miniAOD_UL)
+process = cms.Process("CTPPS", eras.Run2_2017, run2_miniAOD_UL)
  
 # import of standard configurations
 process.load('Configuration.StandardSequences.Services_cff')
@@ -52,7 +62,6 @@ process.MINIAODSIMoutput = cms.OutputModule("PoolOutputModule",
     fileName = cms.untracked.string(options.outputFile),
     outputCommands = process.MINIAODSIMEventContent.outputCommands
 )
-
 # Additional output definition
 
 # Other statements
@@ -69,11 +78,12 @@ outputSteps = [process.endjob_step, process.MINIAODSIMoutput_step]
 toSchedule=[]
 
 #setup proton simulation:
-xangle=150
+xangle=options.xangle
+print('INFO: Run proton simulation for PostTS2 2017 configuration and crossing-angle of %d urad'%xangle)
 process.beamDivergenceVtxGenerator.src = cms.InputTag("")
 process.beamDivergenceVtxGenerator.srcGenParticle = cms.VInputTag(
    #cms.InputTag("genPUProtons","genPUProtons"), # works with step2_premix modifier
-   cms.InputTag("genPUProtons","genPUProtons"),
+   cms.InputTag("genPUProtons",options.instance),
    #cms.InputTag("prunedGenParticles"), # when ~premix_stage2 signal protons proporate to genPUProtons
 )
 

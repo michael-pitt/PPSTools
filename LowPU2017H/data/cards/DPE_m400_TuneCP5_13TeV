@@ -1,0 +1,108 @@
+import FWCore.ParameterSet.Config as cms
+
+from Configuration.Generator.Pythia8CommonSettings_cfi import *
+from Configuration.Generator.MCTunes2017.PythiaCP5Settings_cfi import *
+
+generator = cms.EDFilter("Pythia8GeneratorFilter",
+        comEnergy = cms.double(13000.0),
+        filterEfficiency = cms.untracked.double(1),
+        maxEventsToPrint = cms.untracked.int32(1),
+        pythiaHepMCVerbosity = cms.untracked.bool(False),
+        pythiaPylistVerbosity = cms.untracked.int32(1),
+        PythiaParameters = cms.PSet(
+               pythia8CommonSettingsBlock,
+               pythia8CP5SettingsBlock,
+               processParameters = cms.vstring(
+                   'Next:numberCount  = 10000',
+                   'SigmaTotal:mode = 0',
+                   'SoftQCD:centralDiffractive = on',
+                   'SigmaDiffractive:mMinCD = 400.',
+                   'Diffraction:sampleType = 4',   # exclusive diff., MPI-checked.
+                   'SigmaDiffractive:mode = 1',    # SaS/DL model
+                   'SigmaDiffractive:PomFlux = 7', # H1 Fit B parametrisation
+		   'PDF:pSet = 20',                # NNPDF3.1 QCD+LUXQED NNLO
+                   'PDF:PomSet = 5'),              # H1 2007 Jets NLO
+               parameterSets = cms.vstring('pythia8CommonSettings',
+                                           'pythia8CP5Settings',
+                                           'processParameters')
+        )                        
+)
+
+#     Filter setup (has 0.002% efficiency)
+# ------------------------
+tmpGenParticles = cms.EDProducer("GenParticleProducer",
+    saveBarCodes = cms.untracked.bool(True),
+    src = cms.InputTag("generator","unsmeared"),
+    abortOnUnknownPDGCode = cms.untracked.bool(False)
+)
+
+tmpGenParticlesForJetsNoNu = cms.EDProducer("InputGenJetsParticleSelector",
+    src = cms.InputTag("tmpGenParticles"),
+    ignoreParticleIDs = cms.vuint32(
+         1000022, 1000023, 1000024,
+         1000012, 1000014, 1000016,
+         2000012, 2000014, 2000016,
+         1000039, 5100039,
+         4000012, 4000014, 4000016,
+         9900012, 9900014, 9900016,
+         39,12,14,16),
+    partonicFinalState = cms.bool(False),
+    excludeResonances = cms.bool(False),
+    excludeFromResonancePids = cms.vuint32(12, 13, 14, 16),
+    tausAsJets = cms.bool(False)
+)
+
+AnomalousCellParameters = cms.PSet(
+    maxBadEcalCells         = cms.uint32(9999999),
+    maxRecoveredEcalCells   = cms.uint32(9999999),
+    maxProblematicEcalCells = cms.uint32(9999999),
+    maxBadHcalCells         = cms.uint32(9999999),
+    maxRecoveredHcalCells   = cms.uint32(9999999),
+    maxProblematicHcalCells = cms.uint32(9999999)
+)
+
+GenJetParameters = cms.PSet(
+    src            = cms.InputTag("tmpGenParticlesForJetsNoNu"),
+    srcPVs         = cms.InputTag(''),
+    jetType        = cms.string('GenJet'),
+    jetPtMin       = cms.double(3.0),
+    inputEtMin     = cms.double(0.0),
+    inputEMin      = cms.double(0.0),
+    doPVCorrection = cms.bool(False),
+    # pileup with offset correction
+    doPUOffsetCorr = cms.bool(False),
+       # if pileup is false, these are not read:
+       nSigmaPU = cms.double(1.0),
+       radiusPU = cms.double(0.5),
+    # fastjet-style pileup
+    doAreaFastjet  = cms.bool(False),
+    doRhoFastjet   = cms.bool(False),
+      # if doPU is false, these are not read:
+      Active_Area_Repeats = cms.int32(5),
+      GhostArea = cms.double(0.01),
+      Ghost_EtaMax = cms.double(6.0),
+    Rho_EtaMax = cms.double(4.5),
+    useDeterministicSeed= cms.bool( True ),
+    minSeed             = cms.uint32( 14327 )
+)
+
+tmpAk4GenJetsNoNu = cms.EDProducer(
+    "FastjetJetProducer",
+    GenJetParameters,
+    AnomalousCellParameters,
+    jetAlgorithm = cms.string("AntiKt"),
+    rParam       = cms.double(0.4)
+)
+
+JetSelector = cms.EDFilter("CandViewSelector",
+      src = cms.InputTag("tmpAk4GenJetsNoNu"),
+      cut = cms.string('pt > 50.0')
+)
+ 
+JetFilter = cms.EDFilter("CandViewCountFilter",
+    src = cms.InputTag("JetSelector"),
+    minNumber = cms.uint32(1)
+)
+
+ProductionFilterSequence = cms.Sequence(generator*tmpGenParticles*tmpGenParticlesForJetsNoNu*tmpAk4GenJetsNoNu*JetSelector*JetFilter)
+

@@ -58,3 +58,36 @@ Then call:
 ```
 python scripts/processDataset.py  -i /SingleMuon/Run2017H-UL2017_MiniAODv1_NanoAODv2-v1/NANOAOD -o /eos/user/p/psilva/data/sdanalysis/SingleMuon/Chunks
 ```
+
+## Simulation of signal and background
+
+In [LowPU2017H/data/cards](https://github.com/michael-pitt/PPSTools/blob/main/LowPU2017H/data/cards) pythia fragments of the inclusive and diffractive event can be found. 
+
+Generation of the MC sample can be done using the [gen_worker.sh](https://github.com/michael-pitt/PPSTools/blob/main/LowPU2017H/scripts/gen_worker.sh) script.
+```
+gen_worker.sh $proxy $card $seed $outdir $cmssw #Nevents
+```
+Example:
+   1. obtain valid proxy:
+```
+voms-proxy-init --voms cms
+cp `voms-proxy-info -p` $CMSSW_BASE/src/PPSTools/LowPU2017H/data/voms_proxy.txt
+```
+   2. Execute the script
+```
+$CMSSW_BASE/src/PPSTools/LowPU2017H/scripts/gen_worker.sh \
+$CMSSW_BASE/src/PPSTools/LowPU2017H/data/voms_proxy.txt \
+$CMSSW_BASE/src/PPSTools/LowPU2017H/data/cards/dijet_Pt100_TuneCP5_13TeV \
+0 /eos/home-m/mpitt/LowMu/MC/nanoAOD/dijet_Pt100_TuneCP5_13TeV $CMSSW_BASE 100
+```
+
+To use condor execute:
+```
+python submitMC.py -c $card
+```
+
+For example:
+```
+python $CMSSW_BASE/src/PPSTools/LowPU2017H/scripts/submitMC.py -c $CMSSW_BASE/src/PPSTools/LowPU2017H/data/cards/TTbartoAll_pomflux_TuneCP5_13TeV
+```
+add `-s` if you wish to submit the code to condor

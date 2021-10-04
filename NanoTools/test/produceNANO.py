@@ -80,6 +80,10 @@ process.maxEvents = cms.untracked.PSet(
 # Input source
 process.source = cms.Source("PoolSource",
                             fileNames = cms.untracked.vstring(options.inputFiles),
+                            inputCommands = cms.untracked.vstring('keep *', 
+                            # drop the old event content, since it is empty
+                            'drop recoForwardProtons_ctppsProtons_multiRP_RECO', 
+                            'drop recoForwardProtons_ctppsProtons_singleRP_RECO'),
                             duplicateCheckMode = cms.untracked.string('noDuplicateCheck') 
                             )
 
@@ -118,21 +122,6 @@ process.nanoAOD_step = cms.Path(process.nanoSequenceMC)
 process.endjob_step = cms.EndPath(process.endOfProcess)
 process.NANOEDMAODSIMoutput_step = cms.EndPath(process.NANOEDMAODSIMoutput)
 nanoSteps = [process.nanoAOD_step, process.endjob_step, process.NANOEDMAODSIMoutput_step]
-
-# Output definition
-process.MINIAODSIMoutput = cms.OutputModule("PoolOutputModule",
-    compressionAlgorithm = cms.untracked.string('LZMA'),
-    compressionLevel = cms.untracked.int32(4),
-    dataset = cms.untracked.PSet(
-        dataTier = cms.untracked.string(''),
-        filterName = cms.untracked.string('')
-    ),
-    fileName = cms.untracked.string(options.outputFile),
-    outputCommands = process.MINIAODSIMEventContent.outputCommands
-)
-process.endjob_step = cms.EndPath(process.endOfProcess)
-process.MINIAODSIMoutput_step = cms.EndPath(process.MINIAODSIMoutput)
-nanoSteps = [process.endjob_step, process.MINIAODSIMoutput_step]
 
 #schedule execution
 toSchedule=[]
