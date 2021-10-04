@@ -23,24 +23,28 @@ class Analysis(Module):
     def beginFile(self, inputFile, outputFile, inputTree, wrappedOutputTree):
 
         self.out = wrappedOutputTree
-        self.out.branch("nano_nJets"     , "I");
-        self.out.branch("nano_nProtons"     , "I");
-        self.out.branch("nano_nLeptons"     , "I");
-        self.out.branch("nano_LepPT"     , "F");
-        self.out.branch("nano_LepEta"     , "F");
-        self.out.branch("nano_LepPhi"     , "F");
-        self.out.branch("nano_mll"     , "F");
-        self.out.branch("nano_Yll"     , "F");
-        self.out.branch("nano_mjets"     , "F");
-        self.out.branch("nano_Yjets"     , "F");
-        self.out.branch("nano_JetPT"     , "F");
-        self.out.branch("nano_JetEta"     , "F");
-        self.out.branch("nano_JetPhi"     , "F");
-        self.out.branch("nano_WMT"     , "F");
-        self.out.branch("nano_WPT"     , "F");
-        self.out.branch("nano_WPhi"    , "F");
-        self.out.branch("nano_xip"     , "F");
-        self.out.branch("nano_xin"     , "F");
+        self.out.branch("nano_nJets",     "I");
+        self.out.branch("nano_nProtons",  "I");
+        self.out.branch("nano_nLeptons",  "I");
+        self.out.branch("nano_LepID",     "I");
+        self.out.branch("nano_LepPT",     "F");
+        self.out.branch("nano_LepEta",    "F");
+        self.out.branch("nano_LepPhi",    "F");
+        self.out.branch("nano_LepIso",    "F");
+        self.out.branch("nano_mll",       "F");
+        self.out.branch("nano_Yll",       "F");
+        self.out.branch("nano_mjets",     "F");
+        self.out.branch("nano_Yjets",     "F");
+        self.out.branch("nano_Phijets",   "F");
+        self.out.branch("nano_PTjets",    "F");
+        self.out.branch("nano_JetPT",     "F");
+        self.out.branch("nano_JetEta",    "F");
+        self.out.branch("nano_JetPhi",    "F");
+        self.out.branch("nano_WMT",       "F");
+        self.out.branch("nano_WPT",       "F");
+        self.out.branch("nano_WPhi",      "F");
+        self.out.branch("nano_xip",       "F");
+        self.out.branch("nano_xin",       "F");
 
         
     def endFile(self, inputFile, outputFile, inputTree, wrappedOutputTree):
@@ -54,7 +58,7 @@ class Analysis(Module):
         electrons = Collection(event, "Electron")
         for el in electrons:
             el.etaSC = el.eta + el.deltaEtaSC
-            if el.pt > 20 and abs(el.eta) < 2.4 and abs(el.dxy) < 0.05 and abs(el.dz) < 0.2 and el.pfRelIso03_all < 0.4:
+            if el.pt > 20 and abs(el.eta) < 2.4 and abs(el.dxy) < 0.05 and abs(el.dz) < 0.2: # and el.pfRelIso03_all < 0.4:
                 if el.mvaFall17V2Iso_WP90:
                     event.selectedElectrons.append(el)
 
@@ -67,7 +71,7 @@ class Analysis(Module):
         event.selectedMuons = []
         muons = Collection(event, "Muon")
         for mu in muons:
-            if mu.pt > 20 and abs(mu.eta) < 2.4 and abs(mu.dxy) < 0.5 and abs(mu.dz) < 1.0 and mu.pfRelIso04_all < 0.4:
+            if mu.pt > 20 and abs(mu.eta) < 2.4 and abs(mu.dxy) < 0.5 and abs(mu.dz) < 1.0 and mu.pfRelIso04_all<0.4 :
                 if mu.tightId:
                     event.selectedMuons.append(mu)
 
@@ -162,15 +166,20 @@ class Analysis(Module):
         ######################################################
 
         # leading lepton and jet pt/eta
-        leading_lep_pt=-1; leading_lep_eta=-999; leading_lep_phi=-999
+        leading_lep_id=0
+        leading_lep_pt=-1; leading_lep_eta=-999; leading_lep_phi=-999; leading_lep_iso=-999;
         if len(event.selectedElectrons):
+            leading_lep_id=11
             leading_lep_pt=event.selectedElectrons[0].pt
             leading_lep_eta=event.selectedElectrons[0].eta
             leading_lep_phi=event.selectedElectrons[0].phi
+            leading_lep_iso=event.selectedElectrons[0].pfRelIso03_all
         if len(event.selectedMuons) and event.selectedMuons[0].pt>leading_lep_pt: 
+            leading_lep_id==13
             leading_lep_pt=event.selectedMuons[0].pt
             leading_lep_eta=event.selectedMuons[0].eta
             leading_lep_phi=event.selectedMuons[0].phi
+            leading_lep_iso=event.selectedMuons[0].pfRelIso04_all
 
         leading_jet_pt=-1; leading_jet_eta=-999; leading_jet_phi=-999
         if len(event.selectedAK4Jets):
@@ -213,21 +222,25 @@ class Analysis(Module):
                 
         ## store branches
         self.out.fillBranch("nano_nJets" ,    len(event.selectedAK4Jets))
-        self.out.fillBranch("nano_nProtons" , len(event.selectedProtons))
-        self.out.fillBranch("nano_nLeptons" , len(event.selectedElectrons)+len(event.selectedMuons))
+        self.out.fillBranch("nano_nProtons",  len(event.selectedProtons))
+        self.out.fillBranch("nano_nLeptons",  len(event.selectedElectrons)+len(event.selectedMuons))
+        self.out.fillBranch("nano_LepID" ,    leading_lep_id)
         self.out.fillBranch("nano_LepPT" ,    leading_lep_pt)
         self.out.fillBranch("nano_LepEta" ,   leading_lep_eta)
         self.out.fillBranch("nano_LepPhi" ,   leading_lep_phi)
+        self.out.fillBranch("nano_LepIso" ,   leading_lep_iso)
         self.out.fillBranch("nano_JetPT" ,    leading_jet_pt)
         self.out.fillBranch("nano_JetEta" ,   leading_jet_eta)
         self.out.fillBranch("nano_JetPhi" ,   leading_jet_phi)
-        self.out.fillBranch("nano_WMT" ,     w_mT)
-        self.out.fillBranch("nano_WPT" ,     w_pt)
-        self.out.fillBranch("nano_WPhi" ,    w_phi)
+        self.out.fillBranch("nano_WMT" ,      w_mT)
+        self.out.fillBranch("nano_WPT" ,      w_pt)
+        self.out.fillBranch("nano_WPhi" ,     w_phi)
         self.out.fillBranch("nano_mll" ,      lepSum.M())
         self.out.fillBranch("nano_Yll" ,      lepSum.Rapidity())
         self.out.fillBranch("nano_mjets",     jetSum.M())
         self.out.fillBranch("nano_Yjets",     jetSum.Rapidity())
+        self.out.fillBranch("nano_Phijets",   jetSum.Phi())
+        self.out.fillBranch("nano_PTjets",    jetSum.Pt())
         self.out.fillBranch("nano_xip",       xip)
         self.out.fillBranch("nano_xin",       xin)
     
@@ -238,4 +251,3 @@ class Analysis(Module):
 analysis_mu = lambda : Analysis(channel="mu")
 analysis_el = lambda : Analysis(channel="el")
 analysis_mj = lambda : Analysis(channel="mj")
-

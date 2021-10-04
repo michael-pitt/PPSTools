@@ -7,9 +7,9 @@ def main():
     #configuration
     usage = 'usage: %prog [options]'
     parser = optparse.OptionParser(usage)
-    parser.add_option('-i', '--in',     dest='input',  help='input dataset',    default='/SingleMuon/Run2017H-UL2017_MiniAODv1_NanoAODv2-v1/NANOAOD', type='string')
-    parser.add_option('-o', '--out',    dest='output', help='output directory', default='/eos/user/p/psilva/data/sdanalysis/SingleMuon/Chunks', type='string')
-    parser.add_option('--submit',       dest='submit', help='submit jobs', action='store_true')
+    parser.add_option('-i', '--in',     dest='input',  help='input dataset',    default='/SingleMuon/Run2017H-UL2017_MiniAODv2_NanoAODv9-v1/NANOAOD', type='string')
+    parser.add_option('-o', '--out',    dest='output', help='output directory', default='/eos/user/p/psilva/data/sdanalysis/SingleMuon/Chunks',       type='string')
+    parser.add_option('--submit',       dest='submit', help='submit jobs',      action='store_true')
     (opt, args) = parser.parse_args()
 
     cmssw=os.environ['CMSSW_BASE']
