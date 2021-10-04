@@ -175,7 +175,7 @@ class Analysis(Module):
             leading_lep_phi=event.selectedElectrons[0].phi
             leading_lep_iso=event.selectedElectrons[0].pfRelIso03_all
         if len(event.selectedMuons) and event.selectedMuons[0].pt>leading_lep_pt: 
-            leading_lep_id==13
+            leading_lep_id=13
             leading_lep_pt=event.selectedMuons[0].pt
             leading_lep_eta=event.selectedMuons[0].eta
             leading_lep_phi=event.selectedMuons[0].phi
