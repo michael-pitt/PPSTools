@@ -18,6 +18,18 @@ As a default, the proton nanoAOD content is not stored for MC. To enable it add 
 cd CMSSW_10_6_27/src
 git cms-addpkg PhysicsTools/NanoAOD
 ```
+To retrieve PU protons from `GenParticle` container, modify [genparticles_cff.py](https://github.com/cms-sw/cmssw/blob/master/PhysicsTools/NanoAOD/python/genparticles_cff.py) as follows:
+```
+cmsrel CMSSW_10_6_27
+cd CMSSW_10_6_27/src
+cmsenv
+
+#This package
+git clone git@github.com:michael-pitt/PPSTools.git
+scram b -j
+```python
+#"drop abs(pdgId)= 2212 && abs(pz) > 1000", #drop LHC protons accidentally added by previous keeps
+```
 
 ## Processing files
 
