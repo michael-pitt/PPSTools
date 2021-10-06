@@ -18,31 +18,9 @@ As a default, the proton nanoAOD content is not stored for MC. To enable it add 
 cd CMSSW_10_6_27/src
 git cms-addpkg PhysicsTools/NanoAOD
 ```
-To retrieve PU protons from `GenParticle` container, add to [genparticles_cff.py](https://github.com/cms-sw/cmssw/blob/master/PhysicsTools/NanoAOD/python/genparticles_cff.py) the following code:
-```python
-finalGenProtons = cms.EDProducer("GenParticlePruner",
-    src = cms.InputTag("genPUProtons","genPUProtons"),
-    select = cms.vstring(
-	"drop *",
-    "keep ((pdgId == 2212) && (abs(pz) > 5200) && (abs(pz) < 6467.5))", #keep LHC protons with xi in (1.5% - 20%)
-   )
-)
-
-genProtonTable = cms.EDProducer("SimpleCandidateFlatTableProducer",
-    src = cms.InputTag("finalGenProtons"),
-    cut = cms.string(""), #we should not filter after pruning
-    name= cms.string("GenProton"),
-    doc = cms.string("diffractive protons"),
-    singleton = cms.bool(False), # the number of entries is variable
-    extension = cms.bool(False), # this is the main table for the taus
-    variables = cms.PSet(
-         pt  = Var("pt",  float, precision=8),
-         pz = Var("pz", float,precision=8),
-    )
-)
-
-genProtonSequence = cms.Sequence(finalGenProtons)
-genProtonTables = cms.Sequence(genProtonTable)
+A new collection is available in [GenProtonTableProducer.cc](https://github.com/forthommel/cmssw/blob/pps-nanoaod_gen_proton_table-10_6_X/PhysicsTools/NanoAOD/plugins/GenProtonTableProducer.cc). Merge the branch with your NanoAOD folder:
+```
+#instructions of how to merge git branch
 ```
 
 ## Processing files
@@ -53,7 +31,7 @@ To test proton reconstruction before producing NANOAODs, one can run the followi
 
 ```
 file=/store/mc/RunIISummer20UL17MiniAODv2/WJetsToLNu_TuneCP5_13TeV-madgraphMLM-pythia8/MINIAODSIM/106X_mc2017_realistic_v9-v1/240000/C070EFE9-646E-2D4C-BFEA-4011B96BBCC9.root
-cmsRun $CMSSW_BASE/src/PPSTools/NanoTools/test/addProtons_miniaod.py maxEvents=500 inputFiles=$file
+cmsRun $CMSSW_BASE/src/PPSTools/NanoTools/test/addProtons_miniaod.py maxEvents=500 inputFiles=$file instance=""
 ```
 
 The output file - `output_numEvent500.root` is a MINIAOD which contain 500 events with reconstructed protons from `genPUProtons` container.
@@ -62,7 +40,7 @@ The output file - `output_numEvent500.root` is a MINIAOD which contain 500 event
 
 The following sequence - MINIAOD -> PROTONRECO -> NANOAOD - can be executed using the following command:
 ```
-cmsRun $CMSSW_BASE/src/PPSTools/NanoTools/test/produceNANO.py inputFiles=$file maxEvents=500 runProtonFastSim=150
+cmsRun $CMSSW_BASE/src/PPSTools/NanoTools/test/produceNANO.py inputFiles=$file maxEvents=500 runProtonFastSim=150 instance=""
 ```
 
 Where the `runProtonFastSim` is the input parameter indicates the simulated crossing angle.
