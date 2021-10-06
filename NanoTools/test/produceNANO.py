@@ -27,11 +27,16 @@ options.register('doPUProtons', True,
                  VarParsing.varType.bool,
                  "Include PU protons"
                  )
+options.register('instance', 'genPUProtons',
+                 VarParsing.multiplicity.singleton,
+                 VarParsing.varType.string,
+                 "productInstanceName for PU protons"
+                 )		                 
 options.register('outFilename', 'output_nano.root',
                  VarParsing.multiplicity.singleton,
                  VarParsing.varType.string,
                  "Output file name"
-                 )
+                 )                 
 options.parseArguments()
 
 print "INFO: Era set to", options.era
@@ -130,7 +135,7 @@ toSchedule=[]
 if options.runProtonFastSim:
   print 'INFO:\t Run proton simulation with xangle = ',options.runProtonFastSim,'murad'
   from PPSTools.NanoTools.protonReco_cfg import setupProtonSim
-  setupProtonSim(process,options.runProtonFastSim,withPU=options.doPUProtons)
+  setupProtonSim(process,options.runProtonFastSim,withPU=options.doPUProtons,instance=options.instance)
   toSchedule.append(process.pps_fastsim)
 
 # Schedule definition
@@ -146,6 +151,7 @@ from PhysicsTools.NanoAOD.nano_cff import nanoAOD_customizeMC
 
 #call to customisation function nanoAOD_customizeMC imported from PhysicsTools.NanoAOD.nano_cff
 process = nanoAOD_customizeMC(process)
+process.genProtonTable.srcPUProtons = cms.InputTag('genPUProtons', options.instance)
 
 # Automatic addition of the customisation function from Configuration.DataProcessing.Utils
 from Configuration.DataProcessing.Utils import addMonitoring 

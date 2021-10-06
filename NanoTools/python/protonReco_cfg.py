@@ -1,7 +1,7 @@
 import FWCore.ParameterSet.Config as cms
 
 
-def setupProtonSim(process,xangle,withPU=False):
+def setupProtonSim(process,xangle,withPU=False,instance=""):
 
   # update settings of beam-smearing module
   process.beamDivergenceVtxGenerator.src = cms.InputTag("")
@@ -9,7 +9,7 @@ def setupProtonSim(process,xangle,withPU=False):
   # input collections
   if withPU:
     process.beamDivergenceVtxGenerator.srcGenParticle = cms.VInputTag(
-      cms.InputTag("genPUProtons","genPUProtons"), # works with step2_premix modifier
+      cms.InputTag("genPUProtons",instance), # works with step2_premix modifier
       #cms.InputTag("genPUProtons"),
       #cms.InputTag("prunedGenParticles"), # when ~premix_stage2 signal protons proporate to genPUProtons
     )

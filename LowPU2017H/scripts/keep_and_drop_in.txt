@@ -10,9 +10,10 @@ keep MET*
 keep Muon*
 keep Electron*
 keep Jet*
-keep Proton_multiRP*
+keep Proton*
 keep PV_*
 keep SoftActivityJet*
+keep GenProton*
 
 #keep custom variables
 keep nIsoTrack*
