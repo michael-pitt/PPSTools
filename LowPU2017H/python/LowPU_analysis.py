@@ -45,6 +45,8 @@ class Analysis(Module):
         self.out.branch("nano_WPhi",      "F");
         self.out.branch("nano_xip",       "F");
         self.out.branch("nano_xin",       "F");
+        self.out.branch("nano_tp",        "F");
+        self.out.branch("nano_tn",        "F");
 
         
     def endFile(self, inputFile, outputFile, inputTree, wrappedOutputTree):
@@ -88,7 +90,7 @@ class Analysis(Module):
             if j.pt<25 : 
                 continue
 
-            if abs(j.eta) < 4.7:
+            if abs(j.eta) > 4.7:
                 continue
             
             #require tight (2^1) or tightLepVeto (2^2) [https://twiki.cern.ch/twiki/bin/view/CMS/JetID#nanoAOD_Flags]
@@ -214,10 +216,10 @@ class Analysis(Module):
             jetSum+=jet.p4()
 
         #proton xi
-        xip = xin = -1
+        xip = xin = tp = tn = -1
         for pr in event.selectedProtons:
-            if pr.arm==0: xip=pr.xi
-            if pr.arm==1: xin=pr.xi
+            if pr.arm==0: xip=pr.xi; tp=pr.t
+            if pr.arm==1: xin=pr.xi; tn=pr.t
                 
         ## store branches
         self.out.fillBranch("nano_nJets" ,    len(event.selectedAK4Jets))
@@ -242,6 +244,8 @@ class Analysis(Module):
         self.out.fillBranch("nano_PTjets",    jetSum.Pt())
         self.out.fillBranch("nano_xip",       xip)
         self.out.fillBranch("nano_xin",       xin)
+        self.out.fillBranch("nano_tp",        tp)
+        self.out.fillBranch("nano_tn",        tn)
     
         return True
 

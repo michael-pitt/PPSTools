@@ -8,7 +8,6 @@ keep event*
 #keep custom variables
 keep nIsoTrack*
 keep GenProton*
-keep Proton_singleRP*
 keep MET_pt
 keep MET_phi
 keep MET_sumEt

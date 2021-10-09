@@ -2,54 +2,43 @@
 #instructions from  https://twiki.cern.ch/twiki/bin/view/CMS/PdmVLegacy2017Analysis#Example_of_cmsDriver_AN1
 #run.sh card
 
-startMsg='Job started on '`date`
+startMsg='script started on '`date`
 echo $startMsg
 
 # check number of arguments
-if [ "$#" -ne 6 ]; then
-  echo "Usage: $0 proxy card seed output cmssw Nevents" >&2
-  echo "Example: $0 /tmp/x509up_u58751 ${CMSSW_BASE}/data/cards/dijet_Pt100_TuneCP5_13TeV 1 /eos/home-m/mpitt/LowMu/MC/nanoAOD/dijet_Pt100_TuneCP5_13TeV ${CMSSW_BASE} 50" >&2
+if [ "$#" -ne 3 ]; then
+  echo "Usage: $0 card seed Nevents" >&2
+  echo "Example: $0 ${CMSSW_BASE}/data/cards/dijet_Pt100_TuneCP5_13TeV 1 50" >&2
   exit 1
 fi
 
 ####### INPUT SETTINGS ###########
-proxy=${1}
-card=${2}
-idx=$(printf "%03d" `expr ${3} + 0`)
-outfolder=${4}
-cmssw=${5}
-EVENTS=${6}
+card=${1}
+idx=$(printf "%03d" `expr ${2} + 0`)
+EVENTS=${3}
+seed=`expr 123456 + ${EVENTS} \* ${2}`
 ##################################
 
-echo ./gen_worker.sh $1 $2 $3 $4 $5 $6
+echo ./gen_miniaod.sh $1 $2 $3
 
-setup10() {
-    echo scram p CMSSW CMSSW_10_6_20
-    export SCRAM_ARCH=slc7_amd64_gcc700
-    if [ -r CMSSW_10_6_20/src ] ; then
-       echo release CMSSW_10_6_20 already exists
-    else
-      scram p CMSSW CMSSW_10_6_20
-    fi
-    cd CMSSW_10_6_20/src
-    eval `scram runtime -sh`
-    curl file://${card} --retry 2 --create-dirs -o Configuration/GenProduction/python/My-fragment.py
-    scram b -j
-    cd ../../
-}
+#setup CMSSW 
+CMSSW_VER=CMSSW_10_6_20
 
-echo "create temporary folder to run the job"
-tmpfolder=`echo ${card} | rev | cut -d/ -f1 | rev`
-mkdir -pv /tmp/$USER/${tmpfolder}_${idx}; cd /tmp/$USER/${tmpfolder}_${idx}
+echo scram p CMSSW $CMSSW_VER
+export SCRAM_ARCH=slc7_amd64_gcc700
+if [ -r $CMSSW_VER/src ] ; then
+  echo release $CMSSW_VER already exists
+else
+  scram p CMSSW $CMSSW_VER
+fi
+cd $CMSSW_VER/src
+eval `scram runtime -sh`
+curl file://${card} --retry 2 --create-dirs -o Configuration/GenProduction/python/My-fragment.py
+scram b -j
+cd ../../
 
-echo mkdir -p $outfolder
-mkdir -p $outfolder
-
-echo "Setup CMSSW"
-setup10
 
 echo "GEN-SIM starting"
-seed=`expr 123456 + ${EVENTS} \* ${3}`
 #https://cms-pdmv.cern.ch/mcm/public/restapi/requests/get_setup/BTV-RunIISummer20UL17wmLHEGEN-00001
 #https://cms-pdmv.cern.ch/mcm/public/restapi/requests/get_setup/BTV-RunIISummer20UL17SIM-00003
 echo "cmsDriver.py Configuration/GenProduction/python/My-fragment.py --python_filename step1_cfg.py --eventcontent RAWSIM --datatier GEN-SIM --fileout file:stepSIM.root --conditions 106X_mc2017_realistic_v6 --beamspot Realistic25ns13TeVEarly2017Collision --customise_commands process.RandomNumberGeneratorService.generator.initialSeed=\"cms.untracked.uint32(${seed})\" --step GEN,SIM --geometry DB:Extended --era Run2_2017 --no_exec --mc -n ${EVENTS}"
@@ -101,53 +90,9 @@ echo INFO\: step4_cfg.py
 cat step4_cfg.py
 cmsRun step4_cfg.py
 
-echo "running proton simulation on miniAOD file:"
-echo "Setting up ${cmssw}"
-cd ${cmssw}/src
-eval `scram r -sh`
-cd -
 
-cmsRun $cmssw/src/PPSTools/NanoTools/test/addProtons_miniaod.py inputFiles=file:miniAOD.root instance="" outputFile=miniAOD_withProtons.root
-
-echo "MINIAOD-NANOAOD starting"
-# note this step is done with customized nanoAOD tools
-cmsRun $cmssw/src/PPSTools/NanoTools/test/produceNANO.py inputFiles=file:miniAOD_withProtons.root
-
-# https://cms-pdmv.cern.ch/mcm/public/restapi/requests/get_setup/BTV-RunIISummer20UL17NanoAODv9-00018
-#cmsDriver.py step5 --filein file:miniAOD_withProtons.root --fileout file:nanoAOD.root --mc --eventcontent NANOEDMAODSIM \
---datatier NANOAODSIM --runUnscheduled --conditions 106X_mc2017_realistic_v9 --step NANO \
---nThreads 8 --geometry DB:Extended --era Run2_2017,run2_nanoAOD_106Xv2 --python_filename step5_cfg.py --no_exec -n -1
-#sed -i 's/PoolOutputModule/NanoAODOutputModule/g' step5_cfg.py
-#echo INFO\: step5_cfg.py
-#cat step5_cfg.py
-#cmsRun step5_cfg.py
-
-echo "Analysis starting"
-for channel in mu el mj; do
-  echo 'Processing '$channel
-
-  $CMSSW_BASE/src/PhysicsTools/NanoAODTools/scripts/nano_postproc.py $PWD output_nano.root \
-  --bi $CMSSW_BASE/src/PPSTools/LowPU2017H/scripts/keep_and_drop_in.txt \
-  --bo $CMSSW_BASE/src/PPSTools/LowPU2017H/scripts/keep_and_drop_out.txt \
-  -I PPSTools.LowPU2017H.LowPU_analysis analysis_${channel}  
-  
-  mv output_nano_Skim.root output_nano_Skim_${channel}.root
-done
-
-
-echo "Copying to storage"
-for channel in mu el mj; do
-  mkdir -p ${outfolder}/${tmpfolder}_${channel}
-  echo coutput_nano_Skim_${channel}.root  ${outfolder}/${tmpfolder}_${channel}/skim_events_${idx}.root
-  cp output_nano_Skim_${channel}.root  ${outfolder}/${tmpfolder}_${channel}/skim_events_${idx}.root
-done
-
-echo "clean output"
-cd ../
-rm -rf ${tmpfolder}_${idx}
-
-echo $startMsg
-echo job finished on `date`
+echo INFO: $startMsg
+echo INFO: finished on `date`
 
 
 
