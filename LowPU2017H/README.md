@@ -38,9 +38,8 @@ example of running on a file from `SingleMuon` stream
 ```
 $CMSSW_BASE/src/PhysicsTools/NanoAODTools/scripts/nano_postproc.py \
 output root://cms-xrd-global.cern.ch//store/data/Run2017H/SingleMuon/NANOAOD/UL2017_MiniAODv2_NanoAODv9-v1/100000/00E28CF6-5CDE-A644-A390-40F2F6613888.root \
---json $CMSSW_BASE/src/PPSTools/LowPU2017H/data/combined_RPIN_CMS_LOWMU.json \
---bi $CMSSW_BASE/src/PPSTools/LowPU2017H/scripts/keep_and_drop_in.txt \
---bo $CMSSW_BASE/src/PPSTools/LowPU2017H/scripts/keep_and_drop_out.txt \
+--json data/combined_RPIN_CMS_LOWMU.json \
+--bi scripts/keep_and_drop_in.txt --bo scripts/keep_and_drop_out.txt \
 -c "HLT_HIMu15" -I PPSTools.LowPU2017H.LowPU_analysis analysis_mu
 ```
 
@@ -63,31 +62,35 @@ python scripts/processDataset.py  -i /SingleMuon/Run2017H-UL2017_MiniAODv1_NanoA
 
 In [LowPU2017H/data/cards](https://github.com/michael-pitt/PPSTools/blob/main/LowPU2017H/data/cards) pythia fragments of the inclusive and diffractive event can be found. 
 
-Generation of the MC sample can be done using the [gen_worker.sh](https://github.com/michael-pitt/PPSTools/blob/main/LowPU2017H/scripts/gen_worker.sh) script.
+### MINIAOD
+
+Generation of the MINIAOD using pythia fragments can be done using the [gen_miniaod.sh](https://github.com/michael-pitt/PPSTools/blob/main/LowPU2017H/scripts/gen_miniaod.sh) script.
 ```
-gen_worker.sh $proxy $card $seed $outdir $cmssw #Nevents
+gen_miniaod.sh $card $seed
 ```
 Example:
-   1. obtain valid proxy:
 ```
 voms-proxy-init --voms cms
-cp `voms-proxy-info -p` $CMSSW_BASE/src/PPSTools/LowPU2017H/data/voms_proxy.txt
+scripts/gen_miniaod.sh data/cards/dijet_Pt100_TuneCP5_13TeV 0
 ```
-   2. Execute the script
-```
-$CMSSW_BASE/src/PPSTools/LowPU2017H/scripts/gen_worker.sh \
-$CMSSW_BASE/src/PPSTools/LowPU2017H/data/voms_proxy.txt \
-$CMSSW_BASE/src/PPSTools/LowPU2017H/data/cards/dijet_Pt100_TuneCP5_13TeV \
-0 /eos/home-m/mpitt/LowMu/MC/nanoAOD/dijet_Pt100_TuneCP5_13TeV $CMSSW_BASE 100
-```
+### NANOAOD
+To produce NANOAODs the following sequence should be executed: MINIAOD->MINIAOD+Protons->NANOAOD:
 
-To use condor execute:
+   1. Proton simulation: the code will propagate all final state protons within the RP acceptance, simulate PPS hits, and run the proton reconstruction module.
 ```
-python submitMC.py -c $card
+cmsRun $CMSSW_BASE/src/PPSTools/NanoTools/test/addProtons_miniaod.py inputFiles=file:miniAOD.root instance=""
 ```
-
-For example:
+NOTE: Check the input file which collection is used to store the pileup protons.
+   2. MINIAOD->NANOAOD step
+To produce nanoAOD from miniAOD run:
 ```
-python $CMSSW_BASE/src/PPSTools/LowPU2017H/scripts/submitMC.py -c $CMSSW_BASE/src/PPSTools/LowPU2017H/data/cards/TTbartoAll_pomflux_TuneCP5_13TeV
+cmsRun $CMSSW_BASE/src/PPSTools/NanoTools/test/produceNANO.py inputFiles=file:miniAOD_withProtons.root instance=""
 ```
-add `-s` if you wish to submit the code to condor
+### Submitting to condor
+To produce all steps in one shot, you can run the following script:
+```
+python scripts/submitMC.py -c data/cards/DYtoLL_Pt12_TuneCP5_13TeV
+```
+   - add `-s` if you wish to submit the code to condor.
+   - add `-j` to set the number of jobs.
+   - add `-n` to set the number of events per job.

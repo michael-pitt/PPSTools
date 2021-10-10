@@ -14,7 +14,7 @@ options.register('xangle', 150,
                  VarParsing.multiplicity.singleton,
                  VarParsing.varType.int,
                  "set crossing angle"
-                 )	                  
+                 )	                                       
 options.parseArguments()
 
 #start process
@@ -59,7 +59,7 @@ process.MINIAODSIMoutput = cms.OutputModule("PoolOutputModule",
         dataTier = cms.untracked.string(''),
         filterName = cms.untracked.string('')
     ),
-    fileName = cms.untracked.string(options.outputFile),
+    fileName = cms.untracked.string('miniAOD_withProtons.root'),
     outputCommands = process.MINIAODSIMEventContent.outputCommands
 )
 # Additional output definition

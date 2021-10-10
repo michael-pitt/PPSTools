@@ -66,7 +66,7 @@ sed -i "/process.mix.input.fileNames/a process.mix.input.seed = cms.untracked.in
 cmsRun step2_cfg.py
 
 if [ ! -f stepRAW.root ]; then
-  echo "stepRAW.root was not generated, break."
+  echo "ERROR: stepRAW.root was not generated, stop the gen_miniaid.sh script."
   cd ../
   rm -rf ${tmpfolder}_${idx}
   exit 1;

@@ -21,10 +21,10 @@ def buildCondorFile(opt,FarmDirectory):
     print '\nWrites: ',condorFile
     with open (condorFile,'w') as condor:
         condor.write('executable = {0}/worker.sh\n'.format(FarmDirectory))
-        condor.write('output     = {0}/output.out\n'.format(FarmDirectory))
-        condor.write('error      = {0}/output.err\n'.format(FarmDirectory))
-        condor.write('log        = {0}/output.log\n'.format(FarmDirectory))
-        condor.write('+JobFlavour = "nextweek"\n')
+        condor.write('output     = {0}/output$(ClusterId).out\n'.format(FarmDirectory))
+        condor.write('error      = {0}/output$(ClusterId).err\n'.format(FarmDirectory))
+        condor.write('log        = {0}/output$(ClusterId).log\n'.format(FarmDirectory))
+        condor.write('+JobFlavour = "testmatch"\n')
         OpSysAndVer = str(os.system('cat /etc/redhat-release'))
         if 'SLC' in OpSysAndVer:
             OpSysAndVer = "SLCern6"
@@ -48,6 +48,7 @@ def buildCondorFile(opt,FarmDirectory):
         worker.write('startMsg="Job started on "`date`\n')
         worker.write('echo $startMsg\n')
         worker.write('export HOME=%s\n'%os.environ['HOME']) #otherwise, 'dasgoclient' won't work on condor
+        worker.write('export X509_USER_PROXY=%s\n'%os.environ['X509_USER_PROXY'])
         worker.write('########### INPUT SETTINGS ###########\n')
         worker.write('cardname=`echo ${1} | rev | cut -d"/" -f1 | rev`\n')
         worker.write('idx=$(printf "%03d" `expr ${2} + 0`)\n')
@@ -60,7 +61,7 @@ def buildCondorFile(opt,FarmDirectory):
         worker.write('echo "Produce miniAOD"\n')
         worker.write('$CMSSW_BASE/src/PPSTools/LowPU2017H/scripts/gen_miniaod.sh $1 $2 %d\n'%opt.Nevents)
         worker.write('echo "run proton reco"\n')
-        worker.write('cmsRun $CMSSW_BASE/src/PPSTools/NanoTools/test/addProtons_miniaod.py inputFiles=file:miniAOD.root instance="" outputFile=miniAOD_withProtons.root\n')
+        worker.write('cmsRun $CMSSW_BASE/src/PPSTools/NanoTools/test/addProtons_miniaod.py inputFiles=file:miniAOD.root instance=""\n')
         worker.write('echo "MINIAOD-NANOAOD starting"\n')
         worker.write('cmsRun $CMSSW_BASE/src/PPSTools/NanoTools/test/produceNANO.py inputFiles=file:miniAOD_withProtons.root instance=""\n')
         worker.write('echo "Analysis starting"\n')
@@ -106,7 +107,7 @@ def main():
     if opt.submit:
         os.system('condor_submit {}'.format(condor_script))
     else:
-        print('condor_submit {}'.format(condor_script))
+        print('condor_submit {}\n'.format(condor_script))
 		
 
 if __name__ == "__main__":
