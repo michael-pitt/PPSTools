@@ -9,7 +9,9 @@ def main():
     parser = optparse.OptionParser(usage)
     parser.add_option('-i', '--in',     dest='input',  help='input dataset',    default='/SingleMuon/Run2017H-UL2017_MiniAODv2_NanoAODv9-v1/NANOAOD', type='string')
     parser.add_option('-o', '--out',    dest='output', help='output directory', default='/eos/user/p/psilva/data/sdanalysis/SingleMuon/Chunks',       type='string')
-    parser.add_option('--submit',       dest='submit', help='submit jobs',      action='store_true')
+    parser.add_option('-a', '--analysis', dest='analysis', help='analysis',    default='analysis_mu', type='string')
+    parser.add_option('-t', '--trigger',  dest='trigger',  help='trigger',     default='HLT_HIMu15', type='string')
+    parser.add_option('--submit',         dest='submit', help='submit jobs',   action='store_true')
     (opt, args) = parser.parse_args()
 
     cmssw=os.environ['CMSSW_BASE']
@@ -28,12 +30,12 @@ def main():
     os.system('mkdir -p {}'.format(opt.output))
 
     #print a condor file
-    condor_script='{}_condor.sub'.format( opt.input.replace('/','_')[1:] )
+    condor_script='{}_{}.sub'.format( opt.input.replace('/','_')[1:],opt.analysis )
     scripts_dir='{}/src/PPSTools/LowPU2017H/scripts'.format(cmssw)
     with open (condor_script,'w') as condor:
         condor.write('Proxy_path = {}\n'.format(proxy))
         condor.write('executable = {}/lowpu_worker.sh\n'.format(scripts_dir))
-        condor.write('arguments = $(Proxy_path) $(rfile) {} {}\n'.format(opt.output,cmssw))
+        condor.write('arguments = $(Proxy_path) $(rfile) {} {} {} {}\n'.format(opt.output,cmssw,opt.analysis,opt.trigger))
         condor.write('output     = jobs$(ClusterId).out\n')
         condor.write('error      = jobs$(ClusterId).err\n')
         condor.write('log        = jobs$(ClusterId).log\n')
