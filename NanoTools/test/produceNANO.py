@@ -122,7 +122,8 @@ process.NANOEDMAODSIMoutput = cms.OutputModule("NanoAODOutputModule",
 from Configuration.AlCa.GlobalTag import GlobalTag
 process.GlobalTag = GlobalTag(process.GlobalTag, globalTag, '')
 
-# Need this modifications to use fitVtxY=False option (not recommended by POG)
+# Need these modifications to use fitVtxY=False option (not recommended by POG)
+#process.filteredProtons.protons_multi_rp.chi_sq_max=1e-4 # modify it properly
 #print('FIXME MultiRP proton reco: filteredProtons->ctppsProtons')
 #process.protonTable.tagRecoProtonsMulti=cms.InputTag("ctppsProtons", "multiRP")
 #process.multiRPTable.src=cms.InputTag("ctppsProtons","multiRP")

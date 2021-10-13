@@ -1,0 +1,19 @@
+# this is a comment
+drop *
+
+#keep event info
+keep run*
+keep event*
+
+#keep objects
+keep MET*
+keep Muon*
+keep Electron*
+keep Jet*
+keep Proton*
+keep PV_*
+keep SoftActivityJet*
+
+#keep custom variables
+keep nIsoTrack*
+

@@ -14,8 +14,8 @@ cd -
 
 $CMSSW_BASE/src/PhysicsTools/NanoAODTools/scripts/nano_postproc.py output ${input} \
     --json $CMSSW_BASE/src/PPSTools/LowPU2017H/data/combined_RPIN_CMS_LOWMU.json \
-    --bi $CMSSW_BASE/src/PPSTools/LowPU2017H/scripts/keep_and_drop_in.txt \
-    --bo $CMSSW_BASE/src/PPSTools/LowPU2017H/scripts/keep_and_drop_out.txt \
+    --bi $CMSSW_BASE/src/PPSTools/LowPU2017H/scripts/keep_Data_in.txt \
+    --bo $CMSSW_BASE/src/PPSTools/LowPU2017H/scripts/keep_and_drop_Data_out.txt \
     -c "HLT_HIMu15" \
     -I PPSTools.LowPU2017H.LowPU_analysis analysis_mu
 

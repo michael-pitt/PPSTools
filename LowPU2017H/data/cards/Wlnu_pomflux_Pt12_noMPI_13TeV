@@ -5,7 +5,7 @@ from Configuration.Generator.MCTunes2017.PythiaCP5Settings_cfi import *
 
 generator = cms.EDFilter("Pythia8GeneratorFilter",
         comEnergy = cms.double(13000.0),
-        crossSection = cms.untracked.double(9166.0),
+        crossSection = cms.untracked.double(12570.0),
         filterEfficiency = cms.untracked.double(1),
         maxEventsToPrint = cms.untracked.int32(1),
         pythiaHepMCVerbosity = cms.untracked.bool(False),
@@ -15,14 +15,16 @@ generator = cms.EDFilter("Pythia8GeneratorFilter",
                pythia8CP5SettingsBlock,
                processParameters = cms.vstring(
                    'PhaseSpace:pTHatMin = 12.',
-                   'WeakSingleBoson:ffbar2ffbar(s:W) = on',
+                   'WeakSingleBoson:ffbar2W = on',
+                   'WeakBosonAndParton:qqbar2Wg = on',
+                   'WeakBosonAndParton:qg2Wq = on',
                    'Diffraction:doHard = on',
                    'Diffraction:sampleType = 3',
                    'SigmaDiffractive:mode = 2',
                    'SigmaDiffractive:PomFlux = 7', #The H1 Fit B parametrisation of the Pomeron flux
                    'PDF:PomSet = 4',   # H1 2006 Fit B NLO
 				   'PDF:pSet = 20',    # NNPDF3.1 QCD+LUXQED NNLO
-                   '24:onMode = off',  #turn off all Z decays
+                   '24:onMode = off',  #turn off all W decays
                    '24:onIfAny = 11 12 13 14 15 16' ),  # turn ON W->lnu
                parameterSets = cms.vstring('pythia8CommonSettings',
                                            'pythia8CP5Settings',

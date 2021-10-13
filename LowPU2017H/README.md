@@ -39,7 +39,7 @@ example of running on a file from `SingleMuon` stream
 $CMSSW_BASE/src/PhysicsTools/NanoAODTools/scripts/nano_postproc.py \
 output root://cms-xrd-global.cern.ch//store/data/Run2017H/SingleMuon/NANOAOD/UL2017_MiniAODv2_NanoAODv9-v1/100000/00E28CF6-5CDE-A644-A390-40F2F6613888.root \
 --json data/combined_RPIN_CMS_LOWMU.json \
---bi scripts/keep_and_drop_in.txt --bo scripts/keep_and_drop_out.txt \
+--bi scripts/keep_Data.txt --bo scripts/keep_and_drop_Data_out.txt \
 -c "HLT_HIMu15" -I PPSTools.LowPU2017H.LowPU_analysis analysis_mu
 ```
 

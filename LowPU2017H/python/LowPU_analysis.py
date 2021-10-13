@@ -47,6 +47,8 @@ class Analysis(Module):
         self.out.branch("nano_xin",       "F");
         self.out.branch("nano_tp",        "F");
         self.out.branch("nano_tn",        "F");
+        self.out.branch("nano_mX",        "F");
+        self.out.branch("nano_YX",        "F");
 
         
     def endFile(self, inputFile, outputFile, inputTree, wrappedOutputTree):
@@ -246,6 +248,8 @@ class Analysis(Module):
         self.out.fillBranch("nano_xin",       xin)
         self.out.fillBranch("nano_tp",        tp)
         self.out.fillBranch("nano_tn",        tn)
+        self.out.fillBranch("nano_mX",        (jetSum+lepSum).M())
+        self.out.fillBranch("nano_YX",        (jetSum+lepSum).Rapidity())
     
         return True
 

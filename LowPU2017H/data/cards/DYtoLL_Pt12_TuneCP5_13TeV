@@ -5,7 +5,7 @@ from Configuration.Generator.MCTunes2017.PythiaCP5Settings_cfi import *
 
 generator = cms.EDFilter("Pythia8GeneratorFilter",
         comEnergy = cms.double(13000.0),
-        crossSection = cms.untracked.double(6075.7),
+        crossSection = cms.untracked.double(24130.0),
         filterEfficiency = cms.untracked.double(1),
         maxEventsToPrint = cms.untracked.int32(1),
         pythiaHepMCVerbosity = cms.untracked.bool(False),
@@ -15,10 +15,12 @@ generator = cms.EDFilter("Pythia8GeneratorFilter",
                pythia8CP5SettingsBlock,
                processParameters = cms.vstring(
                    'PhaseSpace:pTHatMin = 12.',
-                   'WeakSingleBoson:ffbar2ffbar(s:gmZ) = on',
+                   'WeakSingleBoson:ffbar2gmZ = on',
+                   'WeakBosonAndParton:qqbar2gmZg = on',
+                   'WeakBosonAndParton:qg2gmZq = on',
 				   'PDF:pSet = 20',    # NNPDF3.1 QCD+LUXQED NNLO
                    '23:onMode = off',  # turn off all Z decays
-                   '23:onIfAny = 11 13 15' ),  # turn ON Z->mumu
+                   '23:onIfAny = 11 13 15' ),  # turn ON Z->ll
                parameterSets = cms.vstring('pythia8CommonSettings',
                                            'pythia8CP5Settings',
                                            'processParameters')
