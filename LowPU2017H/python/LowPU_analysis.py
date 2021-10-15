@@ -65,8 +65,8 @@ class Analysis(Module):
         for el in electrons:
             el.etaSC = el.eta + el.deltaEtaSC
             if el.pt > 20 and abs(el.eta) < 2.4 and abs(el.dxy) < 0.05 and abs(el.dz) < 0.2: # and el.pfRelIso03_all < 0.4:
-                if el.mvaFall17V2noIso_WP90:
-                    setattr(el,'isiso', True if el.mvaFall17V2Iso_WP90 else False)
+                if el.mvaFall17V2Iso_WP90:
+                    setattr(el,'isiso', True if el.mvaFall17V2Iso_WP80 else False)
                     event.selectedElectrons.append(el)
 
         event.selectedElectrons.sort(key=lambda x: x.pt, reverse=True)
