@@ -63,11 +63,15 @@ class Analysis(Module):
         event.selectedElectrons = []
         electrons = Collection(event, "Electron")
         for el in electrons:
-            el.etaSC = el.eta + el.deltaEtaSC
-            if el.pt > 20 and abs(el.eta) < 2.4 and abs(el.dxy) < 0.05 and abs(el.dz) < 0.2: # and el.pfRelIso03_all < 0.4:
-                if el.mvaFall17V2Iso_WP90:
-                    setattr(el,'isiso', True if el.mvaFall17V2Iso_WP80 else False)
-                    event.selectedElectrons.append(el)
+            isEBEE = True if abs(el.eta)>1.4442 and abs(el.eta)<1.5660 else False
+            if el.pt > 20 and abs(el.eta) < 2.4 and not isEBEE and abs(el.dxy) < 0.05 and abs(el.dz) < 0.2:
+
+                isiso=el.mvaFall17V2Iso_WP80
+                setattr(el,'isiso', isiso)
+
+                isnoniso_sideband = el.mvaFall17V2noIso_WP80 and not isiso 
+                if not isiso and not isnoniso_sideband : continue
+                event.selectedElectrons.append(el)
 
         event.selectedElectrons.sort(key=lambda x: x.pt, reverse=True)
         
