@@ -94,3 +94,12 @@ python scripts/submitMC.py -c data/cards/DYtoLL_Pt12_TuneCP5_13TeV
    - add `-s` if you wish to submit the code to condor.
    - add `-j` to set the number of jobs.
    - add `-n` to set the number of events per job.
+   
+### Backgrpund estimation
+
+We use the data-driven method to model backgrounds with fake leptons (mainly QCD processes). The following code will compute Fake-Factors (FF) to Fake-lepton background:
+```
+produceQCD datafilename.root
+```
+
+The code will compute the FF (=N(iso)/N(non-iso)) and store it in the event weight.
