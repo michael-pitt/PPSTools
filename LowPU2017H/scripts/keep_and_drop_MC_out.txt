@@ -5,9 +5,8 @@ drop *
 keep run*
 keep event*
 
-#keep custom variables
-keep nIsoTrack*
-keep GenProton*
+#keep nanoAOD content
+keep nIsoTrack
 keep MET_pt
 keep MET_phi
 keep MET_sumEt
@@ -15,6 +14,9 @@ keep SoftActivityJetHT10
 keep SoftActivityJetNjets10
 keep PV_npvs*
 keep PV_ndof
+keep GenProton*
+
+#keep custom variables
 keep nano*
 
 
