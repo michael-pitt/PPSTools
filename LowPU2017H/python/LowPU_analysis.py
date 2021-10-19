@@ -31,8 +31,14 @@ class Analysis(Module):
         self.out.branch("nano_LepEta",    "F");
         self.out.branch("nano_LepPhi",    "F");
         self.out.branch("nano_LepIso",    "F");
+        self.out.branch("nano_LepIsIso",  "O");
+        self.out.branch("nano_LepDxy",    "F");
+        self.out.branch("nano_LepDz",     "F");
         self.out.branch("nano_mll",       "F");
         self.out.branch("nano_Yll",       "F");
+        self.out.branch("nano_Ptll",      "F");
+        self.out.branch("nano_Etall",     "F");
+        self.out.branch("nano_Phill",     "F");
         self.out.branch("nano_mjets",     "F");
         self.out.branch("nano_Yjets",     "F");
         self.out.branch("nano_Phijets",   "F");
@@ -61,10 +67,15 @@ class Analysis(Module):
         event.selectedElectrons = []
         electrons = Collection(event, "Electron")
         for el in electrons:
-            el.etaSC = el.eta + el.deltaEtaSC
-            if el.pt > 20 and abs(el.eta) < 2.4 and abs(el.dxy) < 0.05 and abs(el.dz) < 0.2: # and el.pfRelIso03_all < 0.4:
-                if el.mvaFall17V2Iso_WP90:
-                    event.selectedElectrons.append(el)
+            isEBEE = True if abs(el.eta)>1.4442 and abs(el.eta)<1.5660 else False
+            if el.pt > 20 and abs(el.eta) < 2.4 and not isEBEE and abs(el.dxy) < 0.05 and abs(el.dz) < 0.2:
+
+                isiso=el.mvaFall17V2Iso_WP80
+                setattr(el,'isiso', isiso)
+
+                isnoniso_sideband = el.mvaFall17V2noIso_WP80 and not isiso 
+                if not isiso and not isnoniso_sideband : continue
+                event.selectedElectrons.append(el)
 
         event.selectedElectrons.sort(key=lambda x: x.pt, reverse=True)
         
@@ -75,8 +86,9 @@ class Analysis(Module):
         event.selectedMuons = []
         muons = Collection(event, "Muon")
         for mu in muons:
-            if mu.pt > 20 and abs(mu.eta) < 2.4 and abs(mu.dxy) < 0.5 and abs(mu.dz) < 1.0 and mu.pfRelIso04_all<0.4 :
+            if mu.pt > 20 and abs(mu.eta) < 2.4 and mu.pfRelIso04_all<0.4 and abs(mu.dxy) < 0.5 and abs(mu.dz) < 1.0:
                 if mu.tightId:
+                    setattr(mu,'isiso', True if mu.pfRelIso04_all<0.15 else False)
                     event.selectedMuons.append(mu)
 
         event.selectedMuons.sort(key=lambda x: x.pt, reverse=True)
@@ -99,11 +111,11 @@ class Analysis(Module):
             if j.jetId<2 : 
                 continue
                 
-            #check overlap with selected leptons
-            deltaR_to_leptons=[ j.p4().DeltaR(lep.p4()) for lep in event.selectedMuons+event.selectedElectrons ]
+            #check overlap with selected leptons which are considered to be isolated 
+            #(isiso attribute set by the select{Electrons,Muons} methods
+            deltaR_to_leptons=[ j.p4().DeltaR(lep.p4()) for lep in event.selectedMuons+event.selectedElectrons if lep.isiso ]
             hasLepOverlap=sum( [dR<0.4 for dR in deltaR_to_leptons] )
-            if hasLepOverlap>0: 
-                continue
+            if hasLepOverlap>0: continue
 
             event.selectedAK4Jets.append(j)
             
@@ -156,6 +168,13 @@ class Analysis(Module):
             if len(event.selectedElectrons)==2:
                 if event.selectedElectrons[0].charge==event.selectedElectrons[1].charge: return False
 
+        if self.channel=='emu':
+            nmu=len(event.selectedMuons)
+            nele=len(event.selectedElectrons)
+            if nmu==0 or nele==0 : return False
+            if nmu+nele!=2 : return False
+            if event.selectedMuons[0].charge==event.selectedElectrons[0].charge : return False
+
         if self.channel=="mj":
             
             #select events with at least 2 jets
@@ -171,18 +190,27 @@ class Analysis(Module):
         # leading lepton and jet pt/eta
         leading_lep_id=0
         leading_lep_pt=-1; leading_lep_eta=-999; leading_lep_phi=-999; leading_lep_iso=-999;
+        leading_lep_isiso=False
+        leading_lep_dxy=-999
+        leading_lep_dz=-999
         if len(event.selectedElectrons):
             leading_lep_id=11
             leading_lep_pt=event.selectedElectrons[0].pt
             leading_lep_eta=event.selectedElectrons[0].eta
             leading_lep_phi=event.selectedElectrons[0].phi
             leading_lep_iso=event.selectedElectrons[0].pfRelIso03_all
+            leading_lep_isiso=event.selectedElectrons[0].isiso
+            leading_lep_dxy=event.selectedElectrons[0].dxy
+            leading_lep_dz=event.selectedElectrons[0].dz
         if len(event.selectedMuons) and event.selectedMuons[0].pt>leading_lep_pt: 
             leading_lep_id=13
             leading_lep_pt=event.selectedMuons[0].pt
             leading_lep_eta=event.selectedMuons[0].eta
             leading_lep_phi=event.selectedMuons[0].phi
             leading_lep_iso=event.selectedMuons[0].pfRelIso04_all
+            leading_lep_isiso=event.selectedMuons[0].isiso
+            leading_lep_dxy=event.selectedMuons[0].dxy
+            leading_lep_dz=event.selectedMuons[0].dz
 
         leading_jet_pt=-1; leading_jet_eta=-999; leading_jet_phi=-999
         if len(event.selectedAK4Jets):
@@ -208,9 +236,20 @@ class Analysis(Module):
         if len(event.selectedElectrons)==2:
             for lep in event.selectedElectrons:
                 lepSum+=lep.p4()
+                if lep.isiso : continue
+                leading_lep_isiso=False
+
         if len(event.selectedMuons)==2:
             for lep in event.selectedMuons:
                 lepSum+=lep.p4()
+                if lep.isiso : continue
+                leading_lep_isiso=False
+
+        if self.channel=='emu':
+            lepSum=event.selectedMuons[0].p4()+event.selectedElectrons[0].p4()
+            leading_lep_isiso = event.selectedMuons[0].isiso & event.selectedElectrons[0].isiso
+            leading_lep_id=11*13
+
                 
         #multi-jet 4-vector:
         jetSum = ROOT.TLorentzVector()
@@ -232,6 +271,9 @@ class Analysis(Module):
         self.out.fillBranch("nano_LepEta" ,   leading_lep_eta)
         self.out.fillBranch("nano_LepPhi" ,   leading_lep_phi)
         self.out.fillBranch("nano_LepIso" ,   leading_lep_iso)
+        self.out.fillBranch("nano_LepIsIso" , leading_lep_isiso)
+        self.out.fillBranch("nano_LepDxy" ,   leading_lep_dxy)
+        self.out.fillBranch("nano_LepDz" ,    leading_lep_dz)
         self.out.fillBranch("nano_JetPT" ,    leading_jet_pt)
         self.out.fillBranch("nano_JetEta" ,   leading_jet_eta)
         self.out.fillBranch("nano_JetPhi" ,   leading_jet_phi)
@@ -240,6 +282,9 @@ class Analysis(Module):
         self.out.fillBranch("nano_WPhi" ,     w_phi)
         self.out.fillBranch("nano_mll" ,      lepSum.M())
         self.out.fillBranch("nano_Yll" ,      lepSum.Rapidity())
+        self.out.fillBranch("nano_Ptll" ,     lepSum.Pt())
+        self.out.fillBranch("nano_Etall",     lepSum.Eta())
+        self.out.fillBranch("nano_Phill",     lepSum.Phi())
         self.out.fillBranch("nano_mjets",     jetSum.M())
         self.out.fillBranch("nano_Yjets",     jetSum.Rapidity())
         self.out.fillBranch("nano_Phijets",   jetSum.Phi())
@@ -255,6 +300,7 @@ class Analysis(Module):
 
 
 # define modules using the syntax 'name = lambda : constructor' to avoid having them loaded when not needed
-analysis_mu = lambda : Analysis(channel="mu")
-analysis_el = lambda : Analysis(channel="el")
-analysis_mj = lambda : Analysis(channel="mj")
+analysis_mu  = lambda : Analysis(channel="mu")
+analysis_el  = lambda : Analysis(channel="el")
+analysis_emu = lambda : Analysis(channel="emu")
+analysis_mj  = lambda : Analysis(channel="mj")
