@@ -13,7 +13,7 @@ keep MET_phi
 keep MET_sumEt
 keep SoftActivityJetHT10
 keep SoftActivityJetNjets10
-keep PV_npvsGood
+keep PV_npvs*
 keep PV_ndof
 keep nano*
 
