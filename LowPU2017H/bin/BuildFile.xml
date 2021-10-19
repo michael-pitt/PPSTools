@@ -1,0 +1,5 @@
+<use name="PPSTools/LowPU2017H"/>
+<environment>
+  <bin name="produceQCD"            file="produceQCD.cc"></bin>
+</environment>
+<Flags CXXFLAGS="-g"/>

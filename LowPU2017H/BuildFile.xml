@@ -1,0 +1,8 @@
+<use name="root"/>
+<use name="roofit"/>
+<use name="rootrflx"/>
+<Flags CXXFLAGS="-ggdb"/>
+<export>
+  <lib name="1"/>
+</export>
+
