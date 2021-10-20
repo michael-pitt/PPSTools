@@ -212,15 +212,15 @@ class Analysis(Module):
         #W boson transverse mass,pt and phi
         MET_pt=event.MET_pt
         MET_phi=event.MET_phi
-        w_mT =  2.*lep_pt[0]*MET_pt*(1.-ROOT.TMath.Cos(ROOT.TVector2.Phi_mpi_pi(lep_phi[0]-MET_phi)))
-        if w_mT>0: 
-            w_mT=ROOT.TMath.Sqrt(w_mT)
-        else:
-            w_mT=-999.
-        w_ptvec=ROOT.TVector2(lep_pt[0]*ROOT.TMath.Cos(lep_phi[0])+MET_pt*ROOT.TMath.Cos(MET_phi),
+        if len(event.selectedLeptons):
+          w_mT =  2.*lep_pt[0]*MET_pt*(1.-ROOT.TMath.Cos(ROOT.TVector2.Phi_mpi_pi(lep_phi[0]-MET_phi)))
+          w_mT=ROOT.TMath.Sqrt(w_mT)
+          w_ptvec=ROOT.TVector2(lep_pt[0]*ROOT.TMath.Cos(lep_phi[0])+MET_pt*ROOT.TMath.Cos(MET_phi),
                               lep_pt[0]*ROOT.TMath.Sin(lep_phi[0])+MET_pt*ROOT.TMath.Sin(MET_phi))
-        w_pt=w_ptvec.Mod()
-        w_phi=w_ptvec.Phi()
+          w_pt=w_ptvec.Mod()
+          w_phi=w_ptvec.Phi()
+        else:
+          w_mT = w_pt = 1; w_phi = -999
         
         #di-lepton 4-vector
         lepSum = ROOT.TLorentzVector()
