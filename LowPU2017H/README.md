@@ -23,7 +23,8 @@ Analysis code is in [LowPU_analysis.py](https://github.com/michael-pitt/PPSTools
 
 Three analysis modules can be executed:
 - `analysis_mu`: HLT_HIMu15, 1 or 2 tight muons, mu_pt>20GeV, Electron veto. If 2 muons are selected, only OS events are stored.
-- `analysis_el`: HLT_HIEle15_WPLoose_Gsf, 1 or 2 MVAFall17V2IsoWP90 electrons, el_pt>20GeV, Muon veto. If 2 electrons are selected, only OS events are stored.
+- `analysis_el`: HLT_HIEle15_WPLoose_Gsf, 1 or 2 MVAFall17V2IsoWP80 electrons, el_pt>20GeV, Muon veto. If 2 electrons are selected, only OS events are stored.
+- `analysis_emu`: HLT_HIEle15_WPLoose_Gsf || HLT_HIMu15, 1 tightID/ISO muon, 1 MVAFall17V2IsoWP80 electron, lep_pt>20GeV, and OS.
 - `analysis_mj`: HLT_HIPFJet140 || HLT_HIPFJetFwd140, selecting events with at least 2 jets, where the leading jet has pt > 140 GeV.
 
 For each event selection:

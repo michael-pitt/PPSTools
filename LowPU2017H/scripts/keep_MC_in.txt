@@ -11,6 +11,7 @@ keep Muon*
 keep Electron*
 keep Jet*
 keep Proton*
+keep PPSLocalTrack*
 keep PV_*
 keep SoftActivityJet*
 keep GenProton*
