@@ -3,12 +3,11 @@ import os, sys
 import ROOT
 ROOT.PyConfig.IgnoreCommandLineOptions = True
 from importlib import import_module
-from PhysicsTools.NanoAODTools.postprocessing.framework.postprocessor import PostProcessor
-##soon to be deprecated
-from PhysicsTools.NanoAODTools.postprocessing.modules.jme.jetmetUncertainties import *
-##new way of using jme uncertainty
-from PhysicsTools.NanoAODTools.postprocessing.modules.jme.jetmetHelperRun2 import *
-### load helpers
+
+from PhysicsTools.NanoAODTools.postprocessing.framework.eventloop import Module
+from PhysicsTools.NanoAODTools.postprocessing.framework.datamodel import Collection
+
+### Proton selector be replaced by preprocessing module
 from PPSTools.LowPU2017H.objectSelector import ProtonSelector
 
 class Analysis(Module):
@@ -57,7 +56,6 @@ class Analysis(Module):
         self.out.branch("nano_tn",        "F");
         self.out.branch("nano_mX",        "F");
         self.out.branch("nano_YX",        "F");
-
         
     def endFile(self, inputFile, outputFile, inputTree, wrappedOutputTree):
         pass
@@ -133,11 +131,12 @@ class Analysis(Module):
         event.selectedProtons = []
         protons = Collection(event, "Proton_multiRP")
         tracks = Collection(event, "PPSLocalTrack")
+
         for idx, pr in enumerate(protons):
             #find associated tracks:
             for tr in tracks:
               if idx != tr.multiRPProtonIdx: continue
-              if tr.decRPId / 10 == 0:
+              if tr.decRPId // 10 % 10 == 0:  # second digit of RPId is 0 or 2 for near or far detector
                 setattr(pr, 'xnear', tr.x)
                 setattr(pr, 'ynear', tr.y)
               else:
@@ -256,7 +255,7 @@ class Analysis(Module):
         for pr in event.selectedProtons:
             if pr.arm==0: xip=pr.xi; tp=pr.t
             if pr.arm==1: xin=pr.xi; tn=pr.t
-                
+
         ## store branches
         self.out.fillBranch("nano_nJets" ,    len(event.selectedAK4Jets))
         self.out.fillBranch("nano_nProtons",  len(event.selectedProtons))
@@ -290,7 +289,7 @@ class Analysis(Module):
         self.out.fillBranch("nano_tn",        tn)
         self.out.fillBranch("nano_mX",        (jetSum+lepSum).M())
         self.out.fillBranch("nano_YX",        (jetSum+lepSum).Rapidity())
-    
+
         return True
 
 
