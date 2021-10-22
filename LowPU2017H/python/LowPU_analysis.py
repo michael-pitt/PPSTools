@@ -8,6 +8,8 @@ from PhysicsTools.NanoAODTools.postprocessing.framework.postprocessor import Pos
 from PhysicsTools.NanoAODTools.postprocessing.modules.jme.jetmetUncertainties import *
 ##new way of using jme uncertainty
 from PhysicsTools.NanoAODTools.postprocessing.modules.jme.jetmetHelperRun2 import *
+### load helpers
+from PPSTools.LowPU2017H.objectSelector import ProtonSelector
 
 class Analysis(Module):
     def __init__(self, channel):
@@ -125,25 +127,41 @@ class Analysis(Module):
             
         event.selectedAK4Jets.sort(key=lambda x: x.pt, reverse=True)
 
-    def selectProtons(self, event):
+    def selectProtons(self, event, prSel):
         ## access a collection of protons and create a new collection based on this
         
         event.selectedProtons = []
         protons = Collection(event, "Proton_multiRP")
-        for j in protons:
-            event.selectedProtons.append(j)
+        tracks = Collection(event, "PPSLocalTrack")
+        for idx, pr in enumerate(protons):
+            #find associated tracks:
+            for tr in tracks:
+              if idx != tr.multiRPProtonIdx: continue
+              if tr.decRPId / 10 == 0:
+                setattr(pr, 'xnear', tr.x)
+                setattr(pr, 'ynear', tr.y)
+              else:
+                setattr(pr, 'xfar', tr.x)
+                setattr(pr, 'yfar', tr.y)
             
+            #store accepted protons
+            if prSel.evalProton(pr): event.selectedProtons.append(pr)
+        
+        #sort selected protons
         event.selectedProtons.sort(key=lambda x: x.xi, reverse=True)
 
 
     def analyze(self, event):
         """process event, return True (go to next module) or False (fail, go to next event)"""
-
+        
+        #initiate proton selector tools:
+        prSel = ProtonSelector('2017H')
+        
         # apply object selection
         self.selectMuons(event)
         self.selectElectrons(event)
         self.selectAK4Jets(event)
-        self.selectProtons(event)
+        self.selectProtons(event, prSel)
         
         #apply event selection depending on the channel:
         if self.channel=="mu":
