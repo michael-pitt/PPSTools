@@ -4,6 +4,7 @@
 
 startMsg='script started on '`date`
 echo $startMsg
+echo ./gen_miniaod.sh $1 $2 $3
 
 # check number of arguments
 if [ "$#" -ne 3 ]; then
@@ -13,13 +14,12 @@ if [ "$#" -ne 3 ]; then
 fi
 
 ####### INPUT SETTINGS ###########
-card=${1}
+card=`readlink -f ${1}`
 idx=$(printf "%03d" `expr ${2} + 0`)
 EVENTS=${3}
 seed=`expr 123456 + ${EVENTS} \* ${2}`
 ##################################
 
-echo ./gen_miniaod.sh $1 $2 $3
 
 #setup CMSSW 
 CMSSW_VER=CMSSW_10_6_20

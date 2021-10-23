@@ -36,7 +36,10 @@ def buildCondorFile(opt,FarmDirectory):
         condor.write('should_transfer_files = YES\n')
         condor.write('transfer_input_files = %s\n\n'%os.environ['X509_USER_PROXY'])
         for i in range(len(cards)):
-            card=cards[i]
+            card=os.path.realpath(cards[i])
+            if not os.path.isfile(card):
+                print('ERROR: %s is missing..... skip the card.'%card)
+                continue
             cardname=card.split('/')[-1]
             output=opt.output+'/'+cardname
             for ch in channels:
