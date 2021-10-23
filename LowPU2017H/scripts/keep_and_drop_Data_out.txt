@@ -6,7 +6,7 @@ keep run*
 keep event*
 
 #keep nanoAOD content
-keep nIsoTrack*
+keep nIsoTrack
 keep MET_pt
 keep MET_phi
 keep MET_sumEt
