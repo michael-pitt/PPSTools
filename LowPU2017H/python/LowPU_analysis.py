@@ -9,6 +9,7 @@ from PhysicsTools.NanoAODTools.postprocessing.framework.datamodel import Collect
 
 ### Proton selector be replaced by preprocessing module
 from PPSTools.LowPU2017H.objectSelector import ProtonSelector
+from PPSTools.LowPU2017H.objectSelector import ElectronSelector, MuonSelector
 
 class Analysis(Module):
     def __init__(self, channel):
@@ -61,39 +62,31 @@ class Analysis(Module):
         pass
 
 
-    def selectElectrons(self, event):
-        ## access a collection in nanoaod and create a new collection based on this
+    def selectElectrons(self, event, elSel):
 
         event.selectedElectrons = []
         electrons = Collection(event, "Electron")
         for el in electrons:
-            isEBEE = True if abs(el.eta)>1.4442 and abs(el.eta)<1.5660 else False
-            if el.pt > 20 and abs(el.eta) < 2.4 and not isEBEE and abs(el.dxy) < 0.05 and abs(el.dz) < 0.2:
-
-                isiso=el.mvaFall17V2Iso_WP80
-                setattr(el, 'isiso', isiso)
-                setattr(el, 'iso', el.pfRelIso03_all)
-                setattr(el, 'id', 11)
-
-                isnoniso_sideband = el.mvaFall17V2noIso_WP80 and not isiso 
-                if not isiso and not isnoniso_sideband : continue
-                event.selectedElectrons.append(el)
-
+            if not elSel.evalElectron(el): continue
+            isiso=el.mvaFall17V2Iso_WP80
+            setattr(el, 'isiso', isiso)
+            setattr(el, 'iso', el.pfRelIso03_all)
+            setattr(el, 'id', 11)
+            event.selectedElectrons.append(el)
         event.selectedElectrons.sort(key=lambda x: x.pt, reverse=True)
         
 
-    def selectMuons(self, event):
+    def selectMuons(self, event, muSel):
         ## access a collection in nanoaod and create a new collection based on this
 
         event.selectedMuons = []
         muons = Collection(event, "Muon")
         for mu in muons:
-            if mu.pt > 20 and abs(mu.eta) < 2.4 and mu.pfRelIso04_all<0.4 and abs(mu.dxy) < 0.5 and abs(mu.dz) < 1.0:
-                if mu.tightId:
-                    setattr(mu, 'isiso', True if mu.pfRelIso04_all<0.15 else False)
-                    setattr(mu, 'iso', mu.pfRelIso04_all)
-                    setattr(mu, 'id', 13)
-                    event.selectedMuons.append(mu)
+            if not muSel.evalMuon(mu): continue
+            setattr(mu, 'isiso', True if mu.pfRelIso04_all<0.15 else False)
+            setattr(mu, 'iso', mu.pfRelIso04_all)
+            setattr(mu, 'id', 13)
+            event.selectedMuons.append(mu)
 
         event.selectedMuons.sort(key=lambda x: x.pt, reverse=True)
 
@@ -155,10 +148,12 @@ class Analysis(Module):
         
         #initiate proton selector tools:
         prSel = ProtonSelector('2017H')
+        elSel = ElectronSelector()
+        muSel = MuonSelector()
         
         # apply object selection
-        self.selectMuons(event)
-        self.selectElectrons(event)
+        self.selectMuons(event, muSel)
+        self.selectElectrons(event, elSel)
         self.selectAK4Jets(event)
         self.selectProtons(event, prSel)
         

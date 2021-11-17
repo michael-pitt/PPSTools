@@ -22,6 +22,8 @@ produceQCD /eos/cms/store/cmst3/group/top/low_mu_data/nano_output_21_10_15/data/
 #include <TMath.h>
 #include "TSystem.h"
 
+#define MAXLEP 5
+
 #include <time.h>
 using namespace std;
 
@@ -58,9 +60,13 @@ int main(int argc, char* argv[])
   float FF_nom=0, FF_denom=0;
   
   // variables used in the sample:
-  float mt, lep_isolation; int nlep;
+  int nlep;
+  float lep_isolation[MAXLEP];
+  bool lep_isIso[MAXLEP];
+  float mt;
   Events->SetBranchAddress("nano_WMT",&mt);
-  Events->SetBranchAddress("nano_LepIso",&lep_isolation);
+  Events->SetBranchAddress("nano_LepIsIso",lep_isIso);
+  Events->SetBranchAddress("nano_LepIso",lep_isolation);
   Events->SetBranchAddress("nano_nLeptons",&nlep);
   
   int times,timed;
@@ -77,7 +83,7 @@ int main(int argc, char* argv[])
 	  if (mt>10) continue;
 	  
 	  // compute FF
-	  if (lep_isolation>0.15) FF_denom++;
+	  if (!lep_isIso[0]) FF_denom++;
 	  else FF_nom++;
   }
   
@@ -101,8 +107,9 @@ int main(int argc, char* argv[])
 	  if (mt<10) continue;
 	  
 	  // updated isolation and write the event
-	  if (lep_isolation<0.15) continue;
-      lep_isolation=0;
+	  if (lep_isIso[0]) continue;
+      lep_isIso[0]=1;
+      lep_isolation[0]=0;
 	  
 	  tout->Fill();
   }

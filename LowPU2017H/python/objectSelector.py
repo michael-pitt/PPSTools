@@ -343,3 +343,39 @@ class ProtonSelector(ObjectSelector):
         if (x<self.xmin[rp] or y<self.ymin[rp] or x>self.xmax[rp] or y>self.ymax[rp]): return False
         
         return True
+
+
+class ElectronSelector(ObjectSelector):
+    def __init__(self, _minPt = 25):
+        self.minPt = _minPt
+
+    def evalElectron(self, el):
+        
+        isEBEE = True if abs(el.eta)>1.4442 and abs(el.eta)<1.5660 else False
+        
+        if isEBEE: return False
+        if el.pt < self.minPt: return False
+        if abs(el.eta) > 2.4: return False
+        #if abs(el.dxy) > 0.05 or abs(el.dz) > 0.2: return False
+        #if not el.mvaFall17V2noIso_WP80: return False
+        if el.cutBased<3: return False
+
+        return True
+        
+class MuonSelector(ObjectSelector):
+    def __init__(self, _minPt = 25, _id = 'medium'):
+        self.minPt = _minPt
+        self.id = _id
+
+    def evalMuon(self, mu):
+
+        if mu.pt < self.minPt: return False
+        if abs(mu.eta) > 2.4: return False
+        if mu.pfRelIso04_all>0.4: return False
+        #if abs(mu.dxybs) > 0.05 or abs(mu.dz) > 1.0: return False
+        if abs(mu.dxybs) > 0.05: return False
+        if self.id == 'tight' and not mu.tightId: return False
+        elif self.id == 'medium' and not mu.mediumId: return False
+        elif self.id == 'loose' and not mu.looseId: return False
+        return True
+        
