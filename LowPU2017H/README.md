@@ -111,8 +111,10 @@ The code will compute the FF (=N(iso)/N(non-iso)) and store it in the event weig
 
 The `notebooks` folder contains a few useful notebooks:
 
-  * [Proton tag rates](https://nbviewer.jupyter.org/github/michael-pitt/PPSTools/blob/master/LowPU2017H/notebooks/ProtonTagRate.ipynb)  
+  * [Proton tag rates](https://nbviewer.org/github/michael-pitt/PPSTools/blob/main/LowPU2017H/notebooks/ProtonTagRate.ipynb)  
   
 ### Running the notebooks
 
 Click the icon to open a [SWAN session](https://swan.cern.ch) (default is good): [![SWAN](https://swanserver.web.cern.ch/swanserver/images/badge_swan_white_150.png)](https://cern.ch/swanserver/cgi-bin/go/?projurl=https://github.com/michael-pitt/PPSTools.git)
+
+Goto PPSTools/LowPU2017H/notebooks/
