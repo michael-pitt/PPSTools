@@ -26,8 +26,8 @@ class Analysis(Module):
     
         self.out = wrappedOutputTree
         self.out.branch("nano_nJets",     "I");
-        self.out.branch("nano_nProtons",  "I");
         self.out.branch("nano_nLeptons",  "I");
+        self.out.branch("nano_LepPDGID",  "I",  lenVar = "nano_nLeptons");
         self.out.branch("nano_LepID",     "I",  lenVar = "nano_nLeptons");
         self.out.branch("nano_LepPT",     "F",  lenVar = "nano_nLeptons");
         self.out.branch("nano_LepEta",    "F",  lenVar = "nano_nLeptons");
@@ -36,6 +36,12 @@ class Analysis(Module):
         self.out.branch("nano_LepIsIso",  "O",  lenVar = "nano_nLeptons");
         self.out.branch("nano_LepDxy",    "F",  lenVar = "nano_nLeptons");
         self.out.branch("nano_LepDz",     "F",  lenVar = "nano_nLeptons");
+        self.out.branch("nano_LepQ",      "F",  lenVar = "nano_nLeptons");
+        self.out.branch("nano_nProtons",  "I");
+        self.out.branch("nano_ProXi" ,    "F",  lenVar = "nano_nProtons");
+        self.out.branch("nano_ProArm",    "I",  lenVar = "nano_nProtons");
+        self.out.branch("nano_ProX" ,     "F",  lenVar = "nano_nProtons");
+        self.out.branch("nano_ProY" ,     "F",  lenVar = "nano_nProtons");	
         self.out.branch("nano_mll",       "F");
         self.out.branch("nano_Yll",       "F");
         self.out.branch("nano_Ptll",      "F");
@@ -61,17 +67,28 @@ class Analysis(Module):
     def endFile(self, inputFile, outputFile, inputTree, wrappedOutputTree):
         pass
 
-
+    
+    def CheckOverlap(self, obj, collection):
+        deltaR_to_leptons=[ obj.p4().DeltaR(element.p4()) for element in collection ]
+        hasLepOverlap=sum( [dR<0.4 for dR in deltaR_to_leptons] )
+        return hasLepOverlap==0
+		
+    def RPstation(self, proton):
+    # 0 (210m), 1 (cylyndrical pots), 2 (220m)
+        return proton.decRPId // 10 % 10
+        
     def selectElectrons(self, event, elSel):
 
         event.selectedElectrons = []
         electrons = Collection(event, "Electron")
         for el in electrons:
             if not elSel.evalElectron(el): continue
-            isiso=el.mvaFall17V2Iso_WP80
+            if not self.CheckOverlap(el,event.selectedElectrons): continue
+            isiso=True # el.mvaFall17V2Iso_WP80
             setattr(el, 'isiso', isiso)
             setattr(el, 'iso', el.pfRelIso03_all)
-            setattr(el, 'id', 11)
+            setattr(el, 'pdgid', 11)
+            setattr(el, 'id', el.cutBased)
             event.selectedElectrons.append(el)
         event.selectedElectrons.sort(key=lambda x: x.pt, reverse=True)
         
@@ -83,9 +100,15 @@ class Analysis(Module):
         muons = Collection(event, "Muon")
         for mu in muons:
             if not muSel.evalMuon(mu): continue
+            if not self.CheckOverlap(mu,event.selectedMuons): continue
             setattr(mu, 'isiso', True if mu.pfRelIso04_all<0.15 else False)
             setattr(mu, 'iso', mu.pfRelIso04_all)
-            setattr(mu, 'id', 13)
+            muon_id = 0
+            if mu.looseId: muon_id=1
+            if mu.mediumId: muon_id=2
+            if mu.tightId: muon_id=3
+            setattr(mu, 'id', muon_id)
+            setattr(mu, 'pdgid', 13)
             event.selectedMuons.append(mu)
 
         event.selectedMuons.sort(key=lambda x: x.pt, reverse=True)
@@ -121,7 +144,7 @@ class Analysis(Module):
     def selectProtons(self, event, prSel):
         ## access a collection of protons and create a new collection based on this
         
-        event.selectedProtons = []
+        event.selectedMultiRPProtons = []
         protons = Collection(event, "Proton_multiRP")
         tracks = Collection(event, "PPSLocalTrack")
 
@@ -129,7 +152,7 @@ class Analysis(Module):
             #find associated tracks:
             for tr in tracks:
               if idx != tr.multiRPProtonIdx: continue
-              if tr.decRPId // 10 % 10 == 0:  # second digit of RPId is 0 or 2 for near or far detector
+              if self.RPstation(tr) == 0:  # second digit of RPId is 0 or 2 for near or far detector
                 setattr(pr, 'xnear', tr.x)
                 setattr(pr, 'ynear', tr.y)
               else:
@@ -137,19 +160,44 @@ class Analysis(Module):
                 setattr(pr, 'yfar', tr.y)
             
             #store accepted protons
-            if prSel.evalProton(pr): event.selectedProtons.append(pr)
+            #if prSel.evalProton(pr): event.selectedMultiRPProtons.append(pr)
+            event.selectedMultiRPProtons.append(pr)
         
         #sort selected protons
-        event.selectedProtons.sort(key=lambda x: x.xi, reverse=True)
+        event.selectedMultiRPProtons.sort(key=lambda x: x.xi, reverse=True)
 
+        event.selectedPixelProtons = []
+        protons = Collection(event, "Proton_singleRP")
+
+        for idx, pr in enumerate(protons):
+
+            #store only pixel tracks
+            if not self.RPstation(pr)==2: continue
+
+            #find associated tracks:
+            for tr in tracks:
+              if idx == tr.singleRPProtonIdx:
+                setattr(pr, 'xnear', 0)
+                setattr(pr, 'ynear', 0)
+                setattr(pr, 'xfar', tr.x)
+                setattr(pr, 'yfar', tr.y)
+                break
+
+            setattr(pr, 'arm', (pr.decRPId // 100))
+            
+            #store accepted protons
+            event.selectedPixelProtons.append(pr)
+        
+        #sort selected protons
+        event.selectedPixelProtons.sort(key=lambda x: x.xi, reverse=True)
 
     def analyze(self, event):
         """process event, return True (go to next module) or False (fail, go to next event)"""
         
         #initiate proton selector tools:
         prSel = ProtonSelector('2017H')
-        elSel = ElectronSelector()
-        muSel = MuonSelector()
+        elSel = ElectronSelector(minPt = 10)
+        muSel = MuonSelector(minPt = 10, _id = 'medium')
         
         # apply object selection
         self.selectMuons(event, muSel)
@@ -167,6 +215,9 @@ class Analysis(Module):
             if len(event.selectedMuons)==0: return False
             if len(event.selectedMuons)>2: return False
             
+            # leading muon pt cut
+            if event.selectedMuons[0].pt<15: return False
+            
             #DY selection (2 OS muons)
             if len(event.selectedMuons)==2:
                 if event.selectedMuons[0].charge==event.selectedMuons[1].charge: return False
@@ -179,6 +230,9 @@ class Analysis(Module):
             # veto events with 0 or >2 electrons
             if len(event.selectedElectrons)==0: return False
             if len(event.selectedElectrons)>2: return False
+
+            # leading electron pt cut
+            if event.selectedElectrons[0].pt<15: return False
 
             #DY selection (2 OS electrons)
             if len(event.selectedElectrons)==2:
@@ -206,14 +260,16 @@ class Analysis(Module):
         event.selectedLeptons=event.selectedElectrons+event.selectedMuons
         event.selectedLeptons.sort(key=lambda x: x.pt, reverse=True)
         
-        lep_id=[lep.id for lep in event.selectedLeptons]
-        lep_pt=[lep.pt for lep in event.selectedLeptons]
-        lep_eta=[lep.eta for lep in event.selectedLeptons]
-        lep_phi=[lep.phi for lep in event.selectedLeptons]
-        lep_iso=[lep.iso for lep in event.selectedLeptons]
-        lep_isiso=[lep.isiso for lep in event.selectedLeptons]
-        lep_dxy=[lep.dxy for lep in event.selectedLeptons]
-        lep_dz=[lep.dz for lep in event.selectedLeptons]
+        lep_pdgid = [lep.pdgid for lep in event.selectedLeptons]
+        lep_id    = [lep.id for lep in event.selectedLeptons]
+        lep_pt    = [lep.pt for lep in event.selectedLeptons]
+        lep_eta   = [lep.eta for lep in event.selectedLeptons]
+        lep_phi   = [lep.phi for lep in event.selectedLeptons]
+        lep_iso   = [lep.iso for lep in event.selectedLeptons]
+        lep_isiso = [lep.isiso for lep in event.selectedLeptons]
+        lep_dxy   = [lep.dxy for lep in event.selectedLeptons]
+        lep_dz    = [lep.dz for lep in event.selectedLeptons]
+        lep_q     = [lep.charge for lep in event.selectedLeptons]
         
         jet_pt=-1; jet_eta=-999; jet_phi=-999
         if len(event.selectedAK4Jets):
@@ -245,16 +301,20 @@ class Analysis(Module):
         for jet in event.selectedAK4Jets:
             jetSum+=jet.p4()
 
-        #proton xi
+        #protons
         xip = xin = tp = tn = -1
-        for pr in event.selectedProtons:
+        for pr in event.selectedMultiRPProtons:
             if pr.arm==0: xip=pr.xi; tp=pr.t
             if pr.arm==1: xin=pr.xi; tn=pr.t
-
+        pro_arm   = [pro.arm for pro in event.selectedPixelProtons]
+        pro_xi    = [pro.xi for pro in event.selectedPixelProtons]
+        pro_x     = [pro.xfar for pro in event.selectedPixelProtons]
+        pro_y     = [pro.yfar for pro in event.selectedPixelProtons]
+   
         ## store branches
         self.out.fillBranch("nano_nJets" ,    len(event.selectedAK4Jets))
-        self.out.fillBranch("nano_nProtons",  len(event.selectedProtons))
         self.out.fillBranch("nano_nLeptons",  len(event.selectedLeptons))
+        self.out.fillBranch("nano_LepPDGID" , lep_pdgid)
         self.out.fillBranch("nano_LepID" ,    lep_id)
         self.out.fillBranch("nano_LepPT" ,    lep_pt)
         self.out.fillBranch("nano_LepEta" ,   lep_eta)
@@ -263,6 +323,12 @@ class Analysis(Module):
         self.out.fillBranch("nano_LepIsIso" , lep_isiso)
         self.out.fillBranch("nano_LepDxy" ,   lep_dxy)
         self.out.fillBranch("nano_LepDz" ,    lep_dz)
+        self.out.fillBranch("nano_LepQ" ,     lep_q)
+        self.out.fillBranch("nano_nProtons",  len(event.selectedPixelProtons))
+        self.out.fillBranch("nano_ProArm" ,   pro_arm)
+        self.out.fillBranch("nano_ProXi" ,    pro_xi)
+        self.out.fillBranch("nano_ProX" ,     pro_x)
+        self.out.fillBranch("nano_ProY" ,     pro_y)
         self.out.fillBranch("nano_JetPT" ,    jet_pt)
         self.out.fillBranch("nano_JetEta" ,   jet_eta)
         self.out.fillBranch("nano_JetPhi" ,   jet_phi)

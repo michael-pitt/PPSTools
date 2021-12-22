@@ -14,6 +14,8 @@ keep SoftActivityJetHT10
 keep SoftActivityJetNjets10
 keep PV_npvs*
 keep PV_ndof
+keep HLT_HIMu17
+keep HLT_HIEle20_WPLoose_Gsf
 
 #keep custom variables
 keep nano*
