@@ -103,10 +103,10 @@ class Analysis(Module):
             if not self.CheckOverlap(mu,event.selectedMuons): continue
             setattr(mu, 'isiso', True if mu.pfRelIso04_all<0.15 else False)
             setattr(mu, 'iso', mu.pfRelIso04_all)
-            muon_id = 0
-            if mu.looseId: muon_id=1
-            if mu.mediumId: muon_id=2
-            if mu.tightId: muon_id=3
+            muon_id = 1
+            if mu.looseId: muon_id=2
+            if mu.mediumId: muon_id=3
+            if mu.tightId: muon_id=4
             setattr(mu, 'id', muon_id)
             setattr(mu, 'pdgid', 13)
             event.selectedMuons.append(mu)

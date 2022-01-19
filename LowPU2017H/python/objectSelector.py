@@ -327,6 +327,8 @@ class ProtonSelector(ObjectSelector):
                       
     def evalProton(self, proton, xangle = 150.0 ):
         
+        return True
+      
         arm = proton.arm
         
         # check aperture cuts in (xi,ThX) plane
@@ -358,7 +360,7 @@ class ElectronSelector(ObjectSelector):
         if abs(el.eta) > 2.4: return False
         #if abs(el.dxy) > 0.05 or abs(el.dz) > 0.2: return False
         #if not el.mvaFall17V2noIso_WP80: return False
-        if el.cutBased<3: return False
+        if el.cutBased<2: return False
 
         return True
         
@@ -376,6 +378,6 @@ class MuonSelector(ObjectSelector):
         if abs(mu.dxybs) > 0.05: return False
         #if self.id == 'tight' and not mu.tightId: return False
         #elif self.id == 'medium' and not mu.mediumId: return False
-        #elif self.id == 'loose' and not mu.looseId: return False
+        if not mu.looseId: return False
         return True
         
