@@ -15,6 +15,10 @@ def buildCondorFile(opt,FarmDirectory):
     rand='{:03d}'.format(random.randint(0,123456))
 	
     cards=opt.cards.split(',')
+    if opt.minbias: 
+       print('INFO: Running on MinBias events, analysis framework is switched off')
+       channels=[]
+
     if(len(cards)<2): print('INFO: Simulate %s'%(cards[0]))
     else: print('INFO: Simulation for the following %d cards:\n%s'%(len(cards),cards))
 
@@ -44,8 +48,11 @@ def buildCondorFile(opt,FarmDirectory):
             output=opt.output+'/'+cardname
             for ch in channels:
               os.system('mkdir -vp %s_%s'%(output,ch))
+            if opt.minbias: os.system('mkdir -vp %s'%(output))
             for j in range(opt.Njobs):
-              outfile='%s/%s_%s/skim_events_%03d.root'%(opt.output,cardname,channels[0],j)
+              outfile= '%s/%s'%(opt.output,cardname)
+              if len(channels):  outfile += '_'+channels[0]
+              outfile += '/skim_events_%03d.root'%j
               if os.path.isfile(outfile): continue
               condor.write('arguments = %s %d\n'%(card,j))
               condor.write('queue 1\n')
@@ -67,18 +74,21 @@ def buildCondorFile(opt,FarmDirectory):
         worker.write('eval `scram r -sh`\n')
         worker.write('cd ${WORKDIR}\n')
         worker.write('echo "Produce miniAOD"\n')
-        worker.write('$CMSSW_BASE/src/PPSTools/LowPU2017H/scripts/gen_miniaod.sh $1 $2 %d\n'%opt.Nevents)
+        if opt.minbias: worker.write('$CMSSW_BASE/src/PPSTools/LowPU2017H/scripts/gen_miniaod_noPU.sh $1 $2 %d\n'%opt.Nevents)
+        else: worker.write('$CMSSW_BASE/src/PPSTools/LowPU2017H/scripts/gen_miniaod.sh $1 $2 %d\n'%opt.Nevents)
         worker.write('[[ ! -f miniAOD.root ]] && echo ERROR with gen_miniaod.sh && exit 1\n')
         worker.write('echo "run proton reco"\n')
-        worker.write('cmsRun $CMSSW_BASE/src/PPSTools/NanoTools/test/addProtons_miniaod.py inputFiles=file:miniAOD.root instance=""\n')
+        if opt.minbias: worker.write('cmsRun $CMSSW_BASE/src/PPSTools/NanoTools/test/addProtons_miniaod.py inputFiles=file:miniAOD.root doSignalOnly=True\n')
+        else: worker.write('cmsRun $CMSSW_BASE/src/PPSTools/NanoTools/test/addProtons_miniaod.py inputFiles=file:miniAOD.root instance=""\n')
         worker.write('echo "MINIAOD-NANOAOD starting"\n')
         worker.write('cmsRun $CMSSW_BASE/src/PPSTools/NanoTools/test/produceNANO.py inputFiles=file:miniAOD_withProtons.root instance=""\n')
         worker.write('echo "Analysis starting"\n')
         for channel in channels:
           worker.write('$CMSSW_BASE/src/PhysicsTools/NanoAODTools/scripts/nano_postproc.py $PWD output_nano.root --bi $CMSSW_BASE/src/PPSTools/LowPU2017H/scripts/keep_MC_in.txt --bo $CMSSW_BASE/src/PPSTools/LowPU2017H/scripts/keep_and_drop_MC_out.txt -I PPSTools.LowPU2017H.LowPU_analysis analysis_%s\n'%channel)
           worker.write('cp output_nano_Skim.root %s/${cardname}_%s/skim_events_${idx}.root\n'%(opt.output,channel))
+        if opt.minbias: worker.write('cp output_nano.root %s/${cardname}/nano_events_${idx}.root\n'%(opt.output))
+        worker.write('echo ls; ls -l ${WORKDIR}\n')
         worker.write('\necho clean output\ncd ../\nrm -rf ${WORKDIR}\n')
-        worker.write('echo ls; ls -l $PWD\n')
         worker.write('echo $startMsg\n')
         worker.write('echo job finished on `date`\n')
     os.system('chmod u+x %s'%(workerFile))
@@ -101,6 +111,7 @@ def main():
     parser.add_option('-n', '--nevents', dest='Nevents', help='number of events to generate',  default=500, type='int')
     parser.add_option('-j', '--njobs',   dest='Njobs',   help='number of jobs',    default=1000, type='int')
     parser.add_option('-s', '--submit',  dest='submit',  help='submit jobs',       action='store_true')
+    parser.add_option('-b', '--minbias', dest='minbias', help='run minimum bias',  action='store_true')
     (opt, args) = parser.parse_args()
      
     #prepare directory with scripts

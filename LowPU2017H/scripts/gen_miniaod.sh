@@ -9,7 +9,7 @@ echo ./gen_miniaod.sh $1 $2 $3
 # check number of arguments
 if [ "$#" -ne 3 ]; then
   echo "Usage: $0 card seed Nevents" >&2
-  echo "Example: $0 ${CMSSW_BASE}/data/cards/dijet_Pt100_TuneCP5_13TeV 1 50" >&2
+  echo "Example: $0 ${CMSSW_BASE}/src/PPSTools/LowPU2017H/data/cards/dijet_Pt100_TuneCP5_13TeV 1 50" >&2
   exit 1
 fi
 

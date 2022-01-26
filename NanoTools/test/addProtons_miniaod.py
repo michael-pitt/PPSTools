@@ -14,7 +14,12 @@ options.register('xangle', 150,
                  VarParsing.multiplicity.singleton,
                  VarParsing.varType.int,
                  "set crossing angle"
-                 )	                                       
+                 )
+options.register('doSignalOnly', False,
+                 VarParsing.multiplicity.singleton,
+                 VarParsing.varType.bool,
+                 "Exclude PU protons"
+                 )		                                       
 options.parseArguments()
 
 #start process
@@ -86,6 +91,9 @@ process.beamDivergenceVtxGenerator.srcGenParticle = cms.VInputTag(
    cms.InputTag("genPUProtons",options.instance),
    #cms.InputTag("prunedGenParticles"), # when ~premix_stage2 signal protons proporate to genPUProtons
 )
+if options.doSignalOnly:
+  print('INFO: reconstruct only signal protons (from hard process)')
+  process.beamDivergenceVtxGenerator.srcGenParticle = cms.VInputTag(cms.InputTag("prunedGenParticles"))
 
 # do not apply vertex smearing again
 process.ctppsBeamParametersESSource.vtxStddevX = 0

@@ -14,6 +14,7 @@ keep SoftActivityJetHT10
 keep SoftActivityJetNjets10
 keep PV_npvs*
 keep PV_ndof
+keep PV_score
 keep GenProton*
 keep HLT_Mu17
 keep HLT_Ele20_WPLoose_Gsf
