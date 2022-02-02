@@ -8,7 +8,7 @@ Code will read data file and generate data-driven QCD estimation in two steps:
 1. Calculate the fake-factors (FF)
 2. generate a new output file with weights replaced by the FF
 Example:
-produceQCD /eos/cms/store/cmst3/group/top/low_mu_data/nano_output_21_10_15/data/SingleMuon_mu.root
+produceQCD /eos/cms/store/cmst3/group/top/low_mu_data/nano_output_22_01_26/data/SingleMuon_mu.root
 */
 
 #include <TString.h>
@@ -63,8 +63,10 @@ int main(int argc, char* argv[])
   int nlep;
   float lep_isolation[MAXLEP];
   bool lep_isIso[MAXLEP];
+  int lep_id[MAXLEP];
   float mt;
   Events->SetBranchAddress("nano_WMT",&mt);
+  Events->SetBranchAddress("nano_LepID",lep_id);
   Events->SetBranchAddress("nano_LepIsIso",lep_isIso);
   Events->SetBranchAddress("nano_LepIso",lep_isolation);
   Events->SetBranchAddress("nano_nLeptons",&nlep);
@@ -83,7 +85,8 @@ int main(int argc, char* argv[])
 	  if (mt>10) continue;
 	  
 	  // compute FF
-	  if (!lep_isIso[0]) FF_denom++;
+	  bool pass = (inFileName.find("mu") != std::string::npos) ? lep_isIso[0] : (lep_id[0]==4);
+	  if (!pass) FF_denom++;
 	  else FF_nom++;
   }
   
@@ -107,9 +110,15 @@ int main(int argc, char* argv[])
 	  if (mt<10) continue;
 	  
 	  // updated isolation and write the event
-	  if (lep_isIso[0]) continue;
-      lep_isIso[0]=1;
-      lep_isolation[0]=0;
+	  bool pass = (inFileName.find("mu") != std::string::npos) ? lep_isIso[0] : (lep_id[0]==4);
+	  if (pass) continue;
+	  if((inFileName.find("mu") != std::string::npos)){
+		lep_isIso[0]=1;
+		lep_isolation[0]=0;
+	  }
+	  else{
+		  lep_id[0]=4;
+	  }
 	  
 	  tout->Fill();
   }

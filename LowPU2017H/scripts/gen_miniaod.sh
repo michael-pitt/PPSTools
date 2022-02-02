@@ -75,7 +75,7 @@ fi
 echo "RAW-AOD starting"
 #https://cms-pdmv.cern.ch/mcm/public/restapi/requests/get_setup/BTV-RunIISummer20UL17RECO-00003
 cmsDriver.py step3 --filein file:stepRAW.root --fileout file:stepAOD.root --mc --eventcontent AODSIM \
---datatier AODSIM --runUnscheduled --conditions 106X_mc2017_realistic_v6 --step RAW2DIGI,L1Reco,RECO,RECOSIM \
+--datatier AODSIM --conditions 106X_mc2017_realistic_v6 --step RAW2DIGI,L1Reco,RECO,RECOSIM \
 --nThreads 8 --geometry DB:Extended --era Run2_2017 --python_filename step3_cfg.py --runUnscheduled --no_exec -n -1
 echo INFO\: step3_cfg.py
 cat step3_cfg.py
@@ -84,7 +84,7 @@ cmsRun step3_cfg.py
 echo "AOD-MINIAOD starting"
 #https://cms-pdmv.cern.ch/mcm/public/restapi/requests/get_setup/BTV-RunIISummer20UL17MiniAODv2-00003
 cmsDriver.py step4 --filein file:stepAOD.root --fileout file:miniAOD.root --mc --eventcontent MINIAODSIM \
---datatier MINIAODSIM --runUnscheduled --conditions 106X_mc2017_realistic_v9 --step PAT --procModifiers run2_miniAOD_UL \
+--datatier MINIAODSIM --conditions 106X_mc2017_realistic_v9 --step PAT --procModifiers run2_miniAOD_UL \
 --nThreads 8 --geometry DB:Extended --era Run2_2017 --runUnscheduled --python_filename step4_cfg.py --no_exec -n -1
 echo INFO\: step4_cfg.py
 cat step4_cfg.py
